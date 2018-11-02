@@ -8,36 +8,44 @@
   <h1 id="playersId">'Connected players: Waiting for game to start...'</h1>
   <h1 id="roundId">Current round: Waiting for game to start</h1>
 </div>
-<div id="admin">
 
+<div id="admin"  align="center">
+    <div id="options">
 
+        IT WORKS <br>
+        <br>
+        <button id="startButton">
+            Start
+        </button>
+        <br><br>
 
-  <button id="startButton">
-    Start
-  </button>
+        <div>
+            <input type="radio" name="gameMode" value="risky"> Risky<br>
+            <input type="radio" name="gameMode" value="distributed"> Distributed<br>
+        </div>
 
-  <div id="options">
+        <br>
 
-      <input type="radio" name="gameMode" value="risky"> Risky<br>
-      <input type="radio" name="gameMode" value="distributed"> Distributed<br>
+        <div>
+            <div>Players:</div>
+            <input type="range" id="numberOfPlayers" name="Players" min="1" max="5" value="1" onchange="playerSliderChange(this.value)"/>
+            <span id="playerSliderText">1</span>
 
-  <div>Players:</div>
-    <input type="range" id="numberOfPlayers" name="Players" min="1" max="5" value="1" onchange="playerSliderChange(this.value)"/>
-    <span id="playerSliderText">1</span>
-
-  <div>Rounds:</div>
-    <input type="range" id="numberOfRounds" name="Rounds" min="1" max="100" value="50" onchange="roundsSliderChange(this.value)"/>
-    <span id="roundsSliderText">50</span>
+            <div>Rounds:</div>
+            <input type="range" id="numberOfRounds" name="Rounds" min="1" max="100" value="50" onchange="roundsSliderChange(this.value)"/>
+            <span id="roundsSliderText">50</span>
+        </div>
 
     </div>
 
-  <button id="button-reset">
-    Reset
-  </button>
+    <button id="button-reset">
+        Reset
+    </button>
 
 </div>
 
 <script>
+
     function playerSliderChange(value){
         document.getElementById('playerSliderText').innerHTML = value;
     }

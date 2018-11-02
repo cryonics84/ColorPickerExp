@@ -1,5 +1,6 @@
 import * as db from "../../sharedDB";
 import {ParticipantData} from "../../stage1/shared/model/data";
+import {Events} from "monsterr";
 
 // Export stage as the default export
 export default {
@@ -23,7 +24,16 @@ export default {
 
           checkIfPlayersReady(server);
       },
+      [Events.CLIENT_CONNECTED]: (monsterr, clientId) => {
+          console.log(clientId, 'connected! Hello there :-)');
+          console.log('current number of participants: ' + monsterr.getPlayers().length);
+      },
+      [Events.CLIENT_RECONNECTED]: (monsterr, clientId) => {
+          console.log(clientId, 'reconnected! Hello there :-)');
+          console.log('current number of participants: ' + monsterr.getPlayers().length);
+      },
   },
+
 
   // Optionally define a setup method that is run before stage begins
   setup: (server) => {
@@ -46,6 +56,7 @@ export default {
     // duration: 10000
   }
 }
+
 
 function checkIfPlayersReady(server){
     console.log('Checking if all players are ready...');

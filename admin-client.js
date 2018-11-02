@@ -77,7 +77,6 @@ function init(){
 function resetGame(){
     //RESET
     admin.sendCommand('resetClient');
-    $('#startButton').text('start');
     $('#button-reset').hide();
 
 
@@ -87,7 +86,6 @@ function resetGame(){
         $('#playersId').text('Connected players: Waiting for game to start...');
         $('#roundId').text('Current round: Waiting for game to start');
 
-        $('#startButton').show();
         $('#options').show();
     }, 500);
 }
@@ -96,7 +94,6 @@ function startGame(){
     //START
     hasStarted = true;
     $('#button-reset').show();
-    $('#startButton').hide();
     $('#options').hide();
 
 

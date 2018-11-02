@@ -446,6 +446,7 @@ function gameOver(){
 }
 
 function reset(){
+    db.participants = [];
     netframe.makeRPC('reset', []);
 }
 

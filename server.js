@@ -16,8 +16,8 @@ const monsterr = createServer({
     clientPassword: undefined,  // can specify client password
     adminPassword: 'sEcr3t'     // and admin password
   }
-})
+});
 
-monsterr.run()
+monsterr.run();
 
 

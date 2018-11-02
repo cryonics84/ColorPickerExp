@@ -1,0 +1,892 @@
+import modelController from '../shared/controller/controller'
+import {clientSharedInterface as netframe} from '../lib/netframe'
+import model from "../shared/model/model";
+import clientController from './client-controller';
+import emoji from './emoji.png';
+import emojiSelected from './emojiSelected.png';
+import speechBubble from './speechBubble3.png';
+import * as dataClasses from '../shared/model/data';
+
+let canvas;
+let entityViewMap = new Map();
+let playersTxt;
+let tileSize = {x: 25, y: 50};
+
+let colorBandArr = ['#cecece', '#b7b7b7', '#9b9999', '#898989'];
+
+let spacingPercentage = 0.2;
+let gapPercentage = 0.02;
+let centerPoint = {};
+let smallestScreenSize;
+let strokeWidth;
+let gapWidth;
+
+let emojiImg, speechBubbleImg;
+
+let mouseData = [];
+let mouseTimer;
+
+
+let State = {Waiting: 0, Lobby: 1, Bubble: 2, Reward: 3, Avatar: 4, End: 5};
+let currentState = State.Waiting;
+
+function init(){
+
+    loadImages();
+
+    entityViewMap = new Map();
+
+    model.setCallbackMap(Iview);
+
+    canvas = netframe.getClient().getCanvas();
+
+
+
+    /*
+    canvas.on("mouse:down", function (options) {
+        if(options.target){
+            if(options.target.id){
+                clickedBubble(options.target.id);
+            }
+        }else{
+            netframe.log('Mouse Data: ' + JSON.stringify(mouseData));
+        }
+    });
+*/
+    canvas.clear();
+
+    //initTimer();
+
+    setupWindowChange();
+
+    let chat = netframe.getClient().getChat();
+    chat.hide();
+
+    calculateSizes();
+}
+
+function loadForm(){
+
+}
+
+function setupWindowChange(){
+    window.onresize = function(event) {
+        netframe.log('Window resize...');
+        setTimeout(
+            function() {
+                calculateSizes();
+            }, 1000);
+
+    };
+}
+
+function removeWindowChange(){
+    window.onresize = function(event) {};
+}
+
+function initTimer(){
+
+    let startTime = new Date().getTime();
+
+    mouseTimer = setInterval(function() {
+
+        // Get todays date and time
+        let date = new Date();
+        let now = date.getTime();
+
+
+        // Find the distance between now and the count down date
+        let elapsedTime = now - startTime;
+
+        // Time calculations for days, hours, minutes and seconds
+        let days = Math.floor(elapsedTime / (1000 * 60 * 60 * 24));
+        let hours = Math.floor((elapsedTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        let minutes = Math.floor((elapsedTime % (1000 * 60 * 60)) / (1000 * 60));
+        let seconds = Math.floor((elapsedTime % (1000 * 60)) / 1000);
+
+        netframe.log('Elapsed time --- ' + days + "d " + hours + "h " + minutes + "m " + seconds + "s " + elapsedTime + 'ms');
+    });
+}
+
+function disableTracking(){
+    canvas.off('mouse:move');
+}
+
+function enableTracking(){
+
+    let startTime = new Date().getTime();
+    mouseData.length = 0;
+
+    canvas.on('mouse:move', function(options) {
+        //netframe.log('X: ' + options.e.layerX + ', Y: ' + options.e.layerY);
+
+        let now = new Date().getTime();
+
+        // Find the distance between now and the count down date
+        let elapsedTime = now - startTime;
+
+        let data = new dataClasses.MouseData(options.e.layerX, options.e.layerY, elapsedTime);
+        mouseData.push(data);
+
+        //netframe.log('Logging mouse data: ' + JSON.stringify(data));
+    });
+}
+
+function loadLobby(){
+    netframe.log('loadLobby called() on view');
+    currentState = State.Lobby;
+    canvas.clear();
+    createGUI();
+    updateGUI();
+    drawRoundNumber();
+}
+
+function loadImages(){
+    fabric.util.loadImage(emoji, function(img) {
+        emojiImg = img;
+    });
+
+    fabric.util.loadImage(speechBubble, function(img) {
+        speechBubbleImg = img;
+    });
+}
+
+/*
+function loadScene(sceneData){
+    canvas.loadFromJSON(sceneData, function() {
+        alert(' this is a callback. invoked when canvas is loaded! ');
+    });
+}
+
+function saveScene(sceneData){
+     sceneData = JSON.stringify(canvas);
+}
+*/
+function loadRewardScene(bubbleIdGuess, colorAnswer, money){
+    netframe.log('Loading reward scene...');
+    currentState = State.Reward;
+    canvas.clear();
+    mouseData.length = 0;
+
+    let selectedBubble = netframe.getMyNetworkIdentity().selectedBubble;
+    netframe.log('showing selected bubble: ' + JSON.stringify(selectedBubble));
+
+    let selectedPosition = {x: 0, y: 0};
+    let selectedPie = makeBubble(-1, 0, 0, 50, selectedBubble.colors);
+    let selectedText = createText('You choose:', {x: 0, y: -75, originX: 'center', originY: 'center'}, 'black');
+
+    let answerPosition = {x: 200, y: 0};
+    let answerPie = makeBubble(-1, 0, 0, 50, [colorAnswer]);
+    let answerText = createText('Correct choice:', {x: 0, y: -75, originX: 'center', originY: 'center'}, 'black');
+
+    let selectedSubGroup = createSubGroup([selectedPie, selectedText], selectedPosition);
+    let answerSubGroup = createSubGroup([answerPie, answerText], answerPosition);
+
+    netframe.log('Created selectedSubGroup: ' + JSON.stringify(selectedSubGroup));
+    netframe.log('Created answerSubGroup: ' + JSON.stringify(answerSubGroup));
+
+    netframe.log('Creating group...');
+    let group = createGroup([selectedSubGroup, answerSubGroup]);
+    netframe.log('Created group: ' + JSON.stringify(group));
+    canvas.add(group);
+
+    let moneyContent = "";
+    if(money > 0){
+        moneyContent = 'You guessed right! You earned: ' + money.toString() +'\nYour total: ' + netframe.getMyNetworkIdentity().totalScore;
+    }else{
+        moneyContent = 'You guessed wrong! You lost: ' + (money).toString() +'\nYour total: ' + netframe.getMyNetworkIdentity().totalScore;
+    }
+    let moneyText = createText(moneyContent, {x: centerPoint.x, y: centerPoint.y + 200, originX: 'center', originY: 'center'}, 'black', 45);
+    addToCanvas(moneyText);
+
+    drawRoundNumber();
+
+/*
+    setTimeout(loadSocialScene, 5000);
+    */
+}
+
+let readyText;
+function loadSocialScene(){
+    currentState = State.Avatar;
+    canvas.clear();
+    createAvatars();
+    enableTracking();
+    netframe.getMyNetworkIdentity().selectedPartipants = [];
+
+
+    readyText = createText('Click here when you are ready.', {x: centerPoint.x, y: canvas.height - 100, originX: 'center', originY: 'center'}, 'red', 30);
+    readyText.on("mousedown", function (options) {
+        netframe.log('Clicked on ready text');
+        clickedReady();
+        readyText.setColor('green');
+    });
+    addToCanvas(readyText);
+
+    drawRoundNumber();
+}
+
+function clickedReady(){
+    netframe.log('clickedReady() called on view');
+    if(netframe.getMyNetworkIdentity().isReady){
+        netframe.log('Already clicked ready..');
+        return;
+    }
+    clientController.cmdSelectParticipant(netframe.getMyNetworkIdentity().selectedPartipants, mouseData);
+    netframe.getMyNetworkIdentity().isReady = true;
+    readyText.set('text', 'Waiting for others...');
+    disableTracking();
+}
+
+function selectParticipant(participantClientId, text, avatar){
+    netframe.log('Clicked avatar #' + participantClientId);
+    if(netframe.getMyNetworkIdentity().selectedPartipants.includes(participantClientId)) {
+        return;
+    }
+    let content = text.get('text');
+    let lastBubbleColors = netframe.getNetworkIdentityFromClientId(participantClientId).selectedBubble.colors;
+    let colorsShortened = lastBubbleColors.map(color => color.charAt(0));
+    if(lastBubbleColors){
+        text.set('text', content + '\n' + colorsShortened);
+    }
+    netframe.getMyNetworkIdentity().selectedPartipants.push(participantClientId);
+
+    //avatar.filters[0].rotation = 2 * Math.random() - 1;
+    avatar.filters.push(new fabric.Image.filters.Grayscale());
+    avatar.applyFilters();
+    canvas.requestRenderAll();
+}
+
+function createAvatars(){
+    netframe.log('creating Avatar');
+
+    let networkIdentities = Object.values(netframe.getNetworkIdentities());
+    netframe.log('Got network identities: ' + JSON.stringify(networkIdentities));
+
+    let spacing = {x: canvas.getWidth() * 0.25, y: canvas.getHeight() * 0.25};
+    let avatarSize = 100;
+    let speechSize = {x: 200, y: 200};
+    let speechOffset = {x: speechSize.x * 0.5, y: -speechSize.y * 0.5};
+
+    let groupArr = [];
+
+    let speechBubbles = [];
+
+    let myIndex = netframe.getMyNetworkIdentity().identityId;
+
+    let avatarPositionCounter = 0;
+    for(let index in networkIdentities){
+        let i = Number(index);
+        if(networkIdentities[i].identityId === myIndex){
+            //skip so we don't show own avatar
+            continue;
+        }
+        netframe.log('Iterating i: ' + i);
+        let subGroupArr = [];
+
+
+        let avatarPos = getAvatarPosition(avatarPositionCounter);
+        avatarPositionCounter++;
+        netframe.log('Got avatar position: ' + JSON.stringify(avatarPos));
+        let position = {
+            x: avatarPos.x * spacing.x,
+            y: avatarPos.y * spacing.y,
+        };
+
+
+        let emoji = new fabric.Image(emojiImg);
+        emoji.set({
+            left: 0,
+            top: 0,
+            originX: 'center',
+            originY: 'center',
+        });
+        //emoji.scaleToHeight(avatarSize);
+        emoji.scaleToWidth(avatarSize);
+        //emoji.filters = [new fabric.Image.filters.HueRotation()];
+
+        subGroupArr.push(emoji);
+
+
+        let speechBubble = new fabric.Image(speechBubbleImg);
+        speechBubble.set({
+            left: speechOffset.x,
+            top: speechOffset.y,
+            originX: 'center',
+            originY: 'center'
+        });
+
+        //speechBubble.scaleToHeight(speechSize.y);
+        speechBubble.scaleToWidth(speechSize.x);
+        speechBubbles.push(speechBubble);
+
+        subGroupArr.push(speechBubble);
+
+        let text = createText('Player: ' + networkIdentities[i].identityId + '\nT: ' + networkIdentities[i].totalScore + '\nP = ' + networkIdentities[i].popularityFactor + '%', {x: speechOffset.x, y: speechOffset.y - 10, originX: 'center', originY: 'center'}, 'green', 20);
+        subGroupArr.push(text);
+
+        // Subgroup
+        let subGroup = createSubGroup(subGroupArr, position);
+        groupArr.push(subGroup);
+        netframe.log('--- Created Subgroup:\n' + JSON.stringify(subGroup));
+
+        subGroup.on("mousedown", function (options) {
+            selectParticipant(networkIdentities[i].clientId, text, emoji);
+        });
+    }
+
+    // Main group
+    let group = createGroup(groupArr);
+    canvas.add(group);
+    netframe.log('--- Created Avatar Group:\n' + JSON.stringify(group));
+
+}
+
+function getAvatarPosition(i){
+    netframe.log('Getting AvatarPosition of i: ' + i);
+    switch (i) {
+        case 0:
+            return {x: -1, y: -1};
+        case 1:
+            return {x: 1, y: -1};
+        case 2:
+            return {x: -1, y: 1};
+        case 3:
+            return {x: 1, y: 1};
+        default:
+            netframe.log('Error getting avatar position');
+            return {x: 0, y: 0};
+    }
+}
+
+function createSubGroup(groupArr, position){
+    return new fabric.Group(groupArr, {
+        left: position.x,
+        top: position.y,
+        originX: 'center',
+        originY: 'center',
+        selectable: false,
+        hoverCursor: 'cursor',
+        subTargetCheck: true
+    });
+}
+
+function createGroup(groupArr){
+    return new fabric.Group(groupArr, {
+        left: centerPoint.x,
+        top: centerPoint.y,
+        originX: 'center',
+        originY: 'center',
+        selectable: false,
+        hoverCursor: 'cursor',
+        subTargetCheck: true
+    });
+}
+
+let countDownInterval;
+function startCountDown(callback){
+    netframe.log('Starting countdown...');
+    let timer = 3;
+
+    countDownInterval = setInterval(function() {
+        netframe.log('Timer: ' + timer);
+
+        playersTxt.set('text', 'Round starting in... ' + timer);
+        render();
+
+        if(timer == 0){
+            clearInterval(countDownInterval);
+            callback();
+            return;
+        }
+
+        timer--;
+
+    }, 1000);
+}
+
+function startRound(){
+    canvas.clear();
+    createGUI();
+    //startCountDown(loadBubbleScene);
+    loadBubbleScene();
+}
+
+function loadBubbleScene(){
+    netframe.log('Loading bubble scene...');
+    currentState = State.Bubble;
+    createCardSet(modelController.getGameManager().moneyGroups);
+    enableTracking();
+    drawRoundNumber();
+}
+
+function drawRoundNumber(){
+    netframe.log('drawRoundNumber() called');
+    let content = 'Round ' + modelController.getGameManager().round + ' / ' + modelController.getGameManager().maxRounds;
+    if(netframe.getMyNetworkIdentity()){
+        content += '\nYour total: ' + netframe.getMyNetworkIdentity().totalScore
+    }
+    let position = {x: 50, y: 50, originX: 'left', originY: 'top'};
+    let color = 'black';
+    let roundText = new createText(content, position, color);
+    addToCanvas(roundText);
+}
+
+function loadFinalScene(){
+    netframe.log('loadFinalScene() called');
+    canvas.clear();
+    currentState = State.End;
+
+    let content = 'Game over - these are the final results:';
+    let position = {x: centerPoint.x, y: 100, originX: 'center', originY: 'center'};
+    let color = 'black';
+    let roundText = new createText(content, position, color, 30);
+    addToCanvas(roundText);
+
+    let scoreText = '';
+    for(let i in netframe.getNetworkIdentities()){
+        let networkIdentity = netframe.getNetworkIdentities()[i];
+        scoreText += 'Player ' + i + ': ' + networkIdentity.totalScore + '\n';
+    }
+
+    let position2 = {x: centerPoint.x, y: 200, originX: 'left', originY: 'top'};
+    let color2 = 'black';
+    let totalScoreText = new createText(scoreText, position2, color2, 20);
+    addToCanvas(totalScoreText);
+}
+
+function createGUI(){
+    netframe.log('createGUI() called');
+    let content = '';
+    let position = {x: centerPoint.x, y: centerPoint.y, originX: 'center', originY: 'center'};
+    let color = 'red';
+    playersTxt = new createText(content, position, color);
+    addToCanvas(playersTxt);
+}
+
+function updateGUI(){
+    netframe.log('updateGUI() called');
+    let numberOfPlayers = Object.keys(netframe.getNetworkIdentities()).length;
+    if(numberOfPlayers === 2){
+        playersTxt.set('text', "Number of players: " + numberOfPlayers + '\nGame will start soon!');
+    }else{
+        playersTxt.set('text', "Number of players: " + numberOfPlayers + '\nWaiting for more players...');
+    }
+
+    render();
+}
+
+function createText(content, position, color, fontSize = 14){
+    netframe.log('createText() called in view with content : ' + content + ', position:' + JSON.stringify(position) + ', color: ' + color);
+    let text = new fabric.IText(content, {
+        fontFamily: 'Verdana',
+        left: position.x, top: position.y,
+        originX: position.originX, originY: position.originY,
+        fill: color,
+        selectable: false,
+        hoverCursor: 'cursor',
+        fontSize: fontSize,
+        lineHeight : 1,
+        textAlign: 'center'
+    });
+    netframe.log('created Text: ' + JSON.stringify(playersTxt));
+    return text;
+}
+
+function addToCanvas(view){
+    netframe.log('addToCanvas() called...');
+    canvas.add(view);
+
+    netframe.log('Checking type of view object: ' + view.get('type'));
+    if(view.get('type') === "i-text"){
+        netframe.log('Bringing text to front...');
+        canvas.bringToFront(view);
+    }
+    netframe.log('rendering all...');
+    canvas.renderAll();
+}
+
+function moveEntity(entity){
+    netframe.log('moveEntity() called on clientView with entity: ' + JSON.stringify(entity));
+    let entityView = entityViewMap.get(entity.id);
+
+    //let offset = ((tileSize / entityView.sizeScale) * ((1 / entityView.sizeScale)));
+    let entityHalfSizeX = (tileSize.x *entityView.sizeScale/2);
+    let offsetX = tileSize/2 - entityHalfSizeX;
+
+    let entityHalfSizeY = (tileSize.y *entityView.sizeScale/2);
+    let offsetY = tileSize/2 - entityHalfSizeY;
+
+    let left = entity.position.x * tileSize.x +offsetX ;
+    let top = entity.position.y * tileSize.y +offsetY;
+    netframe.log('Setting entity position to: ' + JSON.stringify({x: left, y: top}));
+    entityView.set({left: left, top: top});
+    netframe.getClient().getCanvas().renderAll();
+}
+
+function render(){
+    canvas.renderAll();
+}
+
+function reset() {
+    entityViewMap = new Map();
+
+    disableTracking();
+    removeWindowChange()
+}
+
+function removeEntityView(entity){
+    let entityView = entityViewMap.get(entity.id);
+    netframe.getClient().getCanvas().remove(entityView);
+    entityViewMap.delete(entity.id);
+
+    //update gameManagerView if needed
+    if(entity instanceof model.Player){
+        updateGameManagerView();
+    }
+}
+
+function calculateSizes(){
+    netframe.log('Calculating sizes');
+    canvas.clear();
+
+    centerPoint.x = canvas.getWidth() / 2;
+    centerPoint.y = canvas.getHeight() / 2;
+    smallestScreenSize = Math.min(canvas.getWidth()/2, canvas.getHeight()/2);
+    strokeWidth = smallestScreenSize * (spacingPercentage - gapPercentage);
+    gapWidth = smallestScreenSize * gapPercentage;
+
+    redrawScene();
+}
+
+function redrawScene(){
+    netframe.log('Redrawing Scene');
+
+    switch (currentState) {
+        case 0:
+
+            break;
+        case 1:
+            loadLobby();
+            break;
+        case 2:
+            loadBubbleScene();
+            break;
+        case 3:
+            loadRewardScene();
+            break;
+        case 4:
+            loadSocialScene();
+            break;
+        case 5:
+
+            break;
+    }
+}
+
+function createMoneyGroupsView(moneyGroupIndex, value) {
+    netframe.log('creating moneyGroups boxes...');
+
+    let color = new fabric.Color(colorBandArr[moneyGroupIndex]);
+    netframe.log('Band color: ' + JSON.stringify(color));
+
+    // [0] = 20% --- [1] = 40% --- [2] = 60% --- [3] = 80% ---
+    let percentageSpace = 0.2 + (moneyGroupIndex * spacingPercentage);
+
+    let radius = smallestScreenSize * percentageSpace;
+    netframe.log('size of band: ' + radius);
+    let band;
+
+    netframe.log('Creating money label..');
+    let label = value.toString() + '$';
+
+    if(moneyGroupIndex == 0){
+        //create center sphere
+        band = createBandView(-1, centerPoint.x, centerPoint.y, (radius + (strokeWidth/2)), 0, colorBandArr[moneyGroupIndex], 'none');
+        netframe.log('Adding moneyBand to canvas: ' + JSON.stringify(band));
+        addToCanvas(band);
+
+        let text1 = createText(label, {x: centerPoint.x, y: centerPoint.y, originX: 'center', originY: 'center'}, 'black');
+        addToCanvas(text1);
+    }else{
+        band = createBandView(-1, centerPoint.x, centerPoint.y, radius, strokeWidth, 'transparent', colorBandArr[moneyGroupIndex]);
+        netframe.log('Adding moneyBand to canvas: ' + JSON.stringify(band));
+        addToCanvas(band);
+
+        let labelPosition1 = getPointOnCircle(radius, centerPoint.x, centerPoint.y, 0);
+        let labelPosition2 = getPointOnCircle(radius, centerPoint.x, centerPoint.y, 180);
+        let text1 = createText(label, {x: labelPosition1.x, y: labelPosition1.y, originX: 'center', originY: 'center'}, 'black');
+        let text2 = createText(label, {x: labelPosition2.x, y: labelPosition2.y, originX: 'center', originY: 'center'}, 'black');
+        addToCanvas(text1);
+        addToCanvas(text2);
+    }
+
+    return band;
+}
+
+/*
+function createMoneyGroupsView(moneyGroupIndex, value) {
+    netframe.log('creating moneyGroups boxes...');
+
+    let percentageSpace = 1 - (0.25 * moneyGroupIndex);
+    let sizeX = canvas.getWidth() * percentageSpace;
+    let sizeY = canvas.getHeight() * percentageSpace;
+    let left = (canvas.getWidth() - sizeX) / 2;
+    let top = (canvas.getHeight() - sizeY) / 2;
+
+    let viewObj = {
+        left: left, top: top,
+        fill: 'white',
+        selectable: false,
+        hoverCursor: 'cursor',
+        width: sizeX-1,
+        height: sizeY-1,
+        stroke : 'blue',
+        strokeWidth : 1
+    };
+
+    netframe.log('Creating view from obj: ' + JSON.stringify(viewObj));
+
+    let view = new fabric.Rect(viewObj);
+
+    netframe.log('Adding moneyBox to canvas...');
+    addToCanvas(view);
+
+    netframe.log('Creating money label..');
+    let label = value.toString() + '$';
+    let text = createText(label, {x: left, y: top}, 'black');
+    addToCanvas(text);
+
+
+
+    return view;
+}
+*/
+function createCardSet(set){
+    netframe.log('CreateCardSet() called on client-view with set: ' + JSON.stringify(set));
+
+    netframe.log('Iterating moneyGroups...');
+    for(let moneyGroupIndex in set){
+        let moneyGroup = set[moneyGroupIndex];
+
+        let moneyView = createMoneyGroupsView(moneyGroupIndex, moneyGroup.value);
+
+        netframe.log('Iterating moneyGroup: ' + JSON.stringify(moneyGroup));
+
+        for(let bubbleIndex in moneyGroup.bubbles){
+            let bubble = moneyGroup.bubbles[bubbleIndex];
+            netframe.log('Iterating cardGroup: ' + JSON.stringify(bubble));
+
+            let position = getBubblePosition(moneyGroupIndex, bubbleIndex, moneyView);
+
+            netframe.log('Card position: ' + JSON.stringify(position));
+            let id = bubble.id;
+            let radius = smallestScreenSize * (spacingPercentage/2 - gapPercentage);
+            //let bubble = createBandView(id, position.x, position.y, radius , 3, cardGroup.cards[0].color, 'black');
+
+            let pie = makeBubble(id, position.x, position.y, radius, bubble.colors);
+            if(pie){
+                netframe.log('createdPie - adding to canvas: ' + JSON.stringify(pie));
+                canvas.add(pie);
+            }
+
+/*
+            for(let cardIndex in cardGroup.cards){
+                let card = cardGroup.cards[cardIndex];
+                netframe.log('Iterating card: ' + JSON.stringify(card));
+
+                let id = card['id'];
+                let color = card['color'];
+
+                let position = getCardPosition(moneyGroupIndex, set.length-1, cardGroupIndex, cardIndex, moneyView);
+
+                netframe.log('Card position: ' + JSON.stringify(position));
+                let view = createView(id, 'Rect', position, color, 1);
+            }
+            */
+        }
+    }
+}
+
+function createBandView(id, x, y, radius, strokeWidth, fillColor, strokeColor){
+    netframe.log('createBandView() called');
+    let viewObj = {
+        left: x, top: y,
+        originX: 'center' , originY: 'center',
+        fill: fillColor,
+        radius: radius,
+        stroke: strokeColor,
+        strokeWidth: strokeWidth,
+        selectable: false,
+        hoverCursor: 'cursor'
+    };
+
+    if(id >= 0){
+        viewObj.id = id;
+    }else{
+        viewObj.evented = false;
+    }
+
+    let view = new fabric.Circle(viewObj);
+
+    netframe.log('Created View: ' + JSON.stringify(view) + ', adding to canvas...');
+
+
+    entityViewMap.set(id, view);
+
+    netframe.log('Finished creating band!');
+    return view;
+}
+
+function getPointOnCircle(radius, originX, originY, angle){
+    let x = originX + radius * Math.cos(getRadian(angle));
+    let y = originY + radius * Math.sin(getRadian(angle));
+    return {x: x, y: y};
+}
+
+function getRadian(angle){
+    return (angle * Math.PI / 180);
+}
+
+function getBubblePosition(moneyGroupIndex, cardGroupIndex, moneyView){
+    netframe.log('getCardPosition() called with: ' + JSON.stringify(arguments));
+
+    let percentageSpace = 0.2 + (moneyGroupIndex * spacingPercentage);
+
+    let radius = smallestScreenSize * percentageSpace;
+
+    let angle = 0;
+
+    netframe.log('Switch on card group index: ' + cardGroupIndex);
+    switch (parseInt(cardGroupIndex)) {
+        case 0:
+            netframe.log('Case 0');
+            angle = 30; //45
+            break;
+        case 1:
+            netframe.log('Case 1');
+            angle = 90;
+            break;
+        case 2:
+            netframe.log('Case 2');
+            angle = 150; //135;
+            break;
+        case 3:
+            netframe.log('Case 3');
+            angle = 210; //225;
+            break;
+        case 4:
+            netframe.log('Case 4');
+            angle = 270;
+            break;
+        case 5:
+            netframe.log('Case 5');
+            angle = 330; //315;
+            break;
+        default:
+            netframe.log('Failed to find case!');
+            break;
+    }
+
+    return getPointOnCircle(radius, canvas.getWidth() / 2, canvas.getHeight() / 2, angle);
+}
+
+function makeBubble(id, left, top, r, colors){
+    netframe.log('Making Bubble');
+    let pie = drawPie(id, left, top, r, colors);
+
+    pie.on("mousedown", function (options) {
+        netframe.log('Clicked on bubble...');
+        if(options.target) {
+            if (options.target.id) {
+                clickedBubble(options.target.id);
+            }
+        }
+    });
+
+    return pie;
+}
+
+// radians in a circle = Math.PI * 2
+// arc always moves around counter clockwise
+// coordinate system is upper-left corner
+function drawPie(id, left, top, r, colors) {
+    netframe.log('drawPie() called');
+    if(colors.length <= 1){
+        return createBandView(id, left, top, r , 1, colors[0], 'black');
+    }
+
+    let wedges = [];
+
+    // calculate center
+    let cx = left + r;
+    let cy = top + r;
+
+    // set last ending point as top of circle
+    let lastX = cx;
+    let lastY = top;
+
+    // calculate radians per wedge
+    let radians = (Math.PI * 2) / colors.length;
+
+    for(let i = 0; i < colors.length; i++) {
+        // calculate next point on circle
+        let x = cx + Math.sin(radians * (i + 1)) * -r;
+        let y = cy + Math.cos(radians * (i + 1)) * -r;
+
+        // move to center, line to last point, arc to next point, close path
+        // arc: (rx ry x-axis-rotation large-arc-flag sweep-flag x y)
+        let p = 'M'+cx+','+cy+' L'+lastX+','+lastY+' A'+r+','+r+' 0 0 0 '+x+','+y+' z';
+
+        let path = new fabric.Path(p, {fill: colors[i], stroke: 'black'});
+        wedges.push(path);
+
+        lastX = x;
+        lastY = y;
+    }
+
+    let group = new fabric.Group(wedges, {
+        left: left,
+        originX: 'center' , originY: 'center',
+        top: top,
+        perPixelTargetFind: true,
+        lockRotation: true,
+        custom: {'type': 'pie'},
+        selectable: false,
+        hoverCursor: 'cursor'
+    });
+
+    if(id >= 0){
+        group.networkIdentityId = id;
+    }
+
+    netframe.log('Returning group from drawPie(): ' + JSON.stringify(group));
+    return group;
+}
+
+function clickedBubble(id){
+    netframe.log('A bubble was clicked with ID: ' + id);
+    let bubble = modelController.getCardGroupById(id);
+    netframe.log('Sending cmdSelectBubble to server with mouseData: ' + JSON.stringify(mouseData));
+    clientController.cmdSelectBubble(bubble, mouseData);
+    disableTracking();
+}
+
+const Iview = {
+    init: init,
+    moveEntity: moveEntity,
+    render: render,
+    reset: reset,
+    removeEntityView: removeEntityView,
+    createGUI: createGUI,
+    updateGUI: updateGUI,
+    createCardSet: createCardSet,
+    loadAvatarScene: loadSocialScene,
+    loadRewardScene: loadRewardScene,
+    loadBubbleScene: loadBubbleScene,
+    loadLobby: loadLobby,
+    startRound: startRound,
+    loadFinalScene: loadFinalScene
+};
+
+export default Iview;

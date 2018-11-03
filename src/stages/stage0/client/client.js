@@ -69,6 +69,6 @@ export default {
     duration: 0,
     // You can set how much space you want the html
     // to take up. 0 = none. 1 = all.
-    htmlContainerHeight: 0.5
+    htmlContainerHeight: 1
   }
 }

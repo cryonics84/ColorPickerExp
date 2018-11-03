@@ -65,10 +65,6 @@ function init(){
     calculateSizes();
 }
 
-function loadForm(){
-
-}
-
 function setupWindowChange(){
     window.onresize = function(event) {
         netframe.log('Window resize...');
@@ -437,21 +433,24 @@ function loadFinalScene(){
     canvas.clear();
     currentState = State.End;
 
-    let content = 'Game over - these are the final results:';
-    let position = {x: centerPoint.x, y: 100, originX: 'center', originY: 'center'};
+    let content = 'Game over\n Thanks for participating\nThis is your final score:';
+    let position = {x: centerPoint.x, y: centerPoint.y - 100, originX: 'center', originY: 'center'};
     let color = 'black';
-    let roundText = new createText(content, position, color, 30);
+    let roundText = createText(content, position, color, 30);
     addToCanvas(roundText);
 
-    let scoreText = '';
+    let scoreText = netframe.getMyNetworkIdentity().totalScore.toString();
+    netframe.log('final score: ' + scoreText);
+    /*
+    // all players
     for(let i in netframe.getNetworkIdentities()){
         let networkIdentity = netframe.getNetworkIdentities()[i];
         scoreText += 'Player ' + i + ': ' + networkIdentity.totalScore + '\n';
-    }
+    }*/
 
-    let position2 = {x: centerPoint.x, y: 200, originX: 'left', originY: 'top'};
+    let position2 = {x: centerPoint.x, y: centerPoint.y, originX: 'center', originY: 'center'};
     let color2 = 'black';
-    let totalScoreText = new createText(scoreText, position2, color2, 20);
+    let totalScoreText = createText(scoreText, position2, color2, 70);
     addToCanvas(totalScoreText);
 }
 
@@ -686,7 +685,7 @@ function createCardSet(set){
 
             let pie = makeBubble(id, position.x, position.y, radius, bubble.colors);
             if(pie){
-                netframe.log('createdPie - adding to canvas: ' + JSON.stringify(pie));
+                netframe.log('createdPie with id: ' + pie.id + ' - adding to canvas');
                 canvas.add(pie);
             }
 
@@ -749,7 +748,7 @@ function getRadian(angle){
 }
 
 function getBubblePosition(moneyGroupIndex, cardGroupIndex, moneyView){
-    netframe.log('getCardPosition() called with: ' + JSON.stringify(arguments));
+    netframe.log('getBubblePosition() called with...');
 
     let percentageSpace = 0.2 + (moneyGroupIndex * spacingPercentage);
 
@@ -792,14 +791,17 @@ function getBubblePosition(moneyGroupIndex, cardGroupIndex, moneyView){
 }
 
 function makeBubble(id, left, top, r, colors){
-    netframe.log('Making Bubble');
+    netframe.log('Making Bubble with args: ' + JSON.stringify(arguments));
     let pie = drawPie(id, left, top, r, colors);
 
+    netframe.log('Applying mousedown event to new bubble with id: ' + pie.id);
     pie.on("mousedown", function (options) {
         netframe.log('Clicked on bubble...');
         if(options.target) {
             if (options.target.id) {
                 clickedBubble(options.target.id);
+            }else{
+                netframe.log('target has no id');
             }
         }
     });
@@ -856,11 +858,15 @@ function drawPie(id, left, top, r, colors) {
         hoverCursor: 'cursor'
     });
 
+
     if(id >= 0){
-        group.networkIdentityId = id;
+        group.id = id;
+        netframe.log('Applying ID: ' + id + ' to group');
+    }else{
+        netframe.log('ID : ' + id + ' + is not valid!');
     }
 
-    netframe.log('Returning group from drawPie(): ' + JSON.stringify(group));
+    netframe.log('Returning group from drawPie()...');
     return group;
 }
 

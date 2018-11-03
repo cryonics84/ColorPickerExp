@@ -91,11 +91,10 @@ function cmdSelectBubble(bubbleIdGuess, moneyGroupId, clientId, mouseData){
 function cmdSelectParticipant(clientId, selectedParticipantsId, mouseData){
     let identity = netframe.getNetworkIdentityFromClientId(clientId);
 
-
     netframe.makeRPC('selectedParticipant',[clientId, selectedParticipantsId]);
 
     // Save data
-    let socialSceneData = new dataClasses.SocialSceneData(identity.contributionFactor, identity.popularityFactor, selectedParticipantsId, mouseData);
+    let socialSceneData = new dataClasses.SocialSceneData(identity.popularityFactor, selectedParticipantsId, mouseData);
     gameData.roundData[modelController.getGameManager().round-1].participantRoundData[identity.identityId].socialSceneData.push(socialSceneData);
 
     //TODO: Insert check to see if everyone is ready for Bubble round
@@ -145,8 +144,6 @@ function init(serverInstance){
 
     createGameManager();
     initData();
-
-    createFixedCards();
 
     //createUniformAnswers();
     //createDistributedAnswers();
@@ -228,6 +225,7 @@ function initData(){
     }*/
 
     let moneyGroups = modelController.getGameManager().moneyGroups.map(moneyGroup => moneyGroup.value);
+    netframe.log('Adding money groups to gameData: ' + moneyGroups);
     gameData = new dataClasses.GameData(db.uniformAnswers, db.distributedAnswers, db.gameSettings.maxPlayers, db.gameSettings.maxRounds, db.gameSettings.gameMode, [], db.participants, moneyGroups);
     netframe.log('Created GameData: ' + JSON.stringify(gameData));
 }
@@ -237,6 +235,7 @@ function createGameManager(){
     manager.numberOfPlayers = db.gameSettings.maxPlayers;
     manager.maxRounds = db.gameSettings.maxRounds;
     manager.gameMode = db.gameSettings.gameMode;
+    createFixedCards();
 }
 
 //only used to created answer as a one-time thing as the answer should be consistent across multiple experiments.
@@ -426,12 +425,26 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
 }
 
-function saveToDisk(json){
+function saveToDisk(gameDataJSON){
     netframe.log('Saving JSON data to file...');
 
-    fs.writeFile('myTestFile.json', json, 'utf8', finishedSaving);
+    fs.writeFile('myTestFile.json', gameDataJSON, 'utf8', finishedSaving);
 
-    netframe.getServer().send('resJSON', json).toAdmin();
+    //netframe.getServer().send('resJSON', gameDataJSON).toAdmin();
+}
+
+function sendParticipantData(){
+    netframe.getServer().send('resParticipantData', db.participants).toAdmin();
+}
+
+function sendGameData(fileName){
+    fs.readFile('myTestFile.json', function read(err, data) {
+        if (err) {
+            throw err;
+        }
+
+        netframe.getServer().send('resGameData', data).toAdmin();
+    });
 }
 
 function finishedSaving(){
@@ -443,6 +456,7 @@ function gameOver(){
     netframe.makeRPC('loadFinalScene', []);
 
     saveToDisk(JSON.stringify(gameData));
+
 }
 
 function reset(){
@@ -456,9 +470,8 @@ function reset(){
 const api = {
     init: init,
     reset: reset,
-    changeAnswerMode: changeAnswerMode,
-    setNumberOfPlayers: setNumberOfPlayers,
-    setNumberOfRounds: setNumberOfRounds,
+    sendGameData: sendGameData,
+    sendParticipantData: sendParticipantData,
     commands: commands
 };
 

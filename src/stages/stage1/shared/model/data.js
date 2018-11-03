@@ -46,8 +46,8 @@ export class BubbleSceneData {
 }
 
 export class SocialSceneData {
-    constructor(contributionFactor, popularityFactor, selectedParticipantsId, mouseData){
-        this.contributionFactor = contributionFactor;
+    constructor(popularityFactor, selectedParticipantsId, mouseData){
+        //this.contributionFactor = contributionFactor;
         this.popularityFactor = popularityFactor;
         this.selectedParticipantId = selectedParticipantsId;
         this.mouseData = mouseData;

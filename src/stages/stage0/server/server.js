@@ -1,6 +1,7 @@
 import * as db from "../../sharedDB";
 import {ParticipantData} from "../../stage1/shared/model/data";
 import {Events} from "monsterr";
+import serverController from "../../stage1/server/server-controller";
 
 // Export stage as the default export
 export default {
@@ -8,9 +9,12 @@ export default {
   commands: {
       'setGameSettings': function (server, _, ...data) {
           console.log('Received setGameSettings with args: ' + JSON.stringify(data));
-          db.gameSettings.maxPlayers = Number(data[0]);
-          db.gameSettings.maxRounds = Number(data[1]);
-          db.gameSettings.gameMode = data[2];
+          db.gameSettings.maxRounds = Number(data[0]);
+          db.gameSettings.gameMode = data[1];
+      },
+      'resetClient': function (server, _, ...args) {
+          console.log('Resetting client...');
+          db.participants = [];
       },
 
   },
@@ -24,14 +28,6 @@ export default {
 
           checkIfPlayersReady(server);
       },
-      [Events.CLIENT_CONNECTED]: (monsterr, clientId) => {
-          console.log(clientId, 'connected! Hello there :-)');
-          console.log('current number of participants: ' + monsterr.getPlayers().length);
-      },
-      [Events.CLIENT_RECONNECTED]: (monsterr, clientId) => {
-          console.log(clientId, 'reconnected! Hello there :-)');
-          console.log('current number of participants: ' + monsterr.getPlayers().length);
-      },
   },
 
 
@@ -39,8 +35,10 @@ export default {
   setup: (server) => {
     console.log('PREPARING SERVER FOR STAGE', server.getCurrentStage());
 
-      //If we performed a reset, then we don't want players to refill form unless admin has cleared DB.
-      checkIfPlayersReady(server);
+    db.gameSettings.maxPlayers = server.getPlayers().length;
+
+    //If we performed a reset, then we don't want players to refill form unless admin has cleared DB.
+    checkIfPlayersReady(server);
   },  
   
   // Optionally define a teardown method that is run when stage finishes

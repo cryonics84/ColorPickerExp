@@ -35,7 +35,7 @@ export class NetworkIdentity {
 
         this.selectedBubble = null;
 
-        this.contributionFactor = 0;
+        //this.contributionFactor = 0;
         this.popularityFactor = 0;
         this.isReady = false;
         this.selectedPartipants = [];

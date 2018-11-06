@@ -506,6 +506,12 @@ function loadFinalScene(){
     let color2 = 'black';
     let totalScoreText = createText(scoreText, position2, color2, 70);
     addToCanvas(totalScoreText);
+
+    let resolution = {
+        x: canvas.getWidth(),
+        y: canvas.getHeight(),
+    };
+    clientController.cmdFinishedGame(resolution);
 }
 
 function createGUI(){

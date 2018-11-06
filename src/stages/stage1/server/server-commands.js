@@ -8,11 +8,11 @@ const commands = {
     },
     'reqGameData': function (server, _, ...args) {
         console.log('Resetting client...');
-        serverController.sendParticipantData();
+        serverController.sendGameData();
     },
     'reqParticipantData': function (server, _, ...args) {
         console.log('Resetting client...');
-        serverController.sendGameData();
+        serverController.sendParticipantData();
     },
 };
 

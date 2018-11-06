@@ -6,7 +6,7 @@ import './src/admin-client.css'
 //import {gameSettings} from "./src/stages/sharedDB";
 import * as db from "./src/stages/sharedDB";
 import * as adminContent from './src/adminHTML.html'
-import * as adminGameOver from './src/adminGameOver.html'
+
 
 
 
@@ -55,7 +55,7 @@ let events = {
     'finishedRegistration': (admin, data) => {
         console.log('Received finishedRegistration from server...');
         admin.getChat().append('finished registration');
-    }
+    },
     'GameOver': function (admin, data) {
         console.log('Received GameOver event from server with data: ' + JSON.stringify(data));
         gameOver();
@@ -79,6 +79,7 @@ const admin = createClient({
 let hasStarted = false;
 
 insertHTML();
+
 function insertHTML(){
     console.log('loading html');
     //$("#admin").load(adminContent);
@@ -96,20 +97,31 @@ function insertHTML(){
         resetGame();
     });
 
+    $('#button-gameData').mouseup(e => {
+        e.preventDefault()
+        requestGameData();
+    });
 
+    $('#button-participantData').mouseup(e => {
+        e.preventDefault()
+        requestParticipantData();
+    });
+
+    hideStuff();
 }
 
-function init(){
-    console.log('initializing...');
+function hideStuff(){
+    console.log('hideStuff() called');
     if(!hasStarted){
         console.log('game has not started yet');
         $('#activeGame').hide();
-        $('#finishedGame').hide();
+        $('#gameSettings').show();
+        $('#gameOver').hide();
     }else{
         console.log('game has started yet');
         $('#activeGame').show();
         $('#gameSettings').hide();
-        $('#finishedGame').show();
+        $('#gameOver').hide();
     }
 
 }
@@ -128,7 +140,7 @@ function resetGame(){
     //RESET
     admin.sendCommand('resetClient');
     $('#activeGame').hide();
-    $('#finishedGame').hide();
+    $('#gameOver').hide();
 
 
     setTimeout(function(){
@@ -146,7 +158,6 @@ function startGame(){
     hasStarted = true;
     $('#activeGame').show();
     $('#gameSettings').hide();
-    $('#finishedGame').show();
 
     let gameSettings = document.getElementById("gameSettings");
 
@@ -173,16 +184,8 @@ function download(content, fileName, contentType) {
 }
 
 function gameOver(){
-    document.getElementById("gameOver").innerHTML = (adminGameOver);
+    $('#gameOver').show();
 
-    $('#button-gameData').mouseup(e => {
-        e.preventDefault()
-        requestGameData();
-    });
 
-    $('#button-participantData').mouseup(e => {
-        e.preventDefault()
-        requestParticipantData();
-    });
 }
 

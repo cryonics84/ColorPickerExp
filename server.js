@@ -13,6 +13,7 @@ const monsterr = createServer({
   commands,
   stages,
   options: {
+    port: 8080,
     clientPassword: undefined,  // can specify client password
     adminPassword: 'sEcr3t'     // and admin password
   }

@@ -125,9 +125,9 @@ function cmdSelectParticipant(clientId, selectedParticipantsId, mouseData){
 }
 
 function cmdFinishedGame(canvasSize, clientId){
-    netframe.log('cmdFinishedGame() called with: ' + arguments);
+    netframe.log('cmdFinishedGame() called with: ' + JSON.stringify(arguments));
     //Find participant
-    let participant = db.participants.find(participant => participant.clientId === clientId);
+    let participant = db.participants.find(participant => participant.id === clientId);
     participant.resolution = canvasSize;
 
     let networkIdentity = netframe.getNetworkIdentityFromClientId(clientId);
@@ -470,7 +470,7 @@ function sendParticipantData(){
     netframe.getServer().send('resParticipantData', JSON.stringify(db.participants)).toAdmin();
 }
 
-function sendGameData(fileName){
+function sendGameData(){
     fs.readFile('myTestFile.json', function read(err, data) {
         if (err) {
             throw err;

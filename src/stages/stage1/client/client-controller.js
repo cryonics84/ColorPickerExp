@@ -132,7 +132,7 @@ function cmdSelectParticipant(selectedParticipants, mouseData){
 
 function cmdFinishedGame(canvasSize){
     netframe.log('cmdFinishedGame() called with canvasSize: ' + canvasSize);
-    netframe.makeCmd('cmdFinishedGame', [canvasSize]);
+    netframe.makeCmd('cmdFinishedGame', [canvasSize, netframe.getClientId()]);
 }
 
 //---------------------------------------------------------------
@@ -148,5 +148,6 @@ export default {
     init: init,
     cmdSelectBubble: cmdSelectBubble,
     cmdSelectParticipant: cmdSelectParticipant,
+    cmdFinishedGame: cmdFinishedGame,
     rpcs: rpcs
 }

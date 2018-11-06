@@ -65,6 +65,59 @@ function init(){
     calculateSizes();
 }
 
+let readyCircle;
+let readyText;
+
+function setReadyTextVisibility(isVisible){
+    netframe.log('Setting ready group visibility: ' + isVisible);
+    if(isVisible){
+        let readyText = createText('Click center circle to begin...', {x: centerPoint.x, y: centerPoint.y -50, originX: 'center',
+            originY: 'center'}, 'black', 50);
+        let circleRadius = 10;
+
+        //let readyCircle = createBandView(-1, centerPoint.x, centerPoint.y,circleRadius,1,'white','black');
+
+        let circle = {
+            left: centerPoint.x, top: centerPoint.y,
+            originX: 'center' , originY: 'center',
+            fill: 'green',
+            radius: 10,
+            stroke: 'black',
+            strokeWidth: 2,
+            selectable: false,
+            hoverCursor: 'cursor'
+        };
+        let readyCircle = new fabric.Circle(circle);
+
+        readyCircle.on("mousedown", function (options) {
+            netframe.log('Clicked Ready Button!');
+            setReadyTextVisibility(false);
+            loadBubbleScene();
+        });
+
+        canvas.add(readyText);
+        canvas.add(readyCircle);
+        /*
+        readyGroup = new fabric.Group([readyText, readyCircle], {
+            left: centerPoint.x,
+            top: centerPoint.y,
+            originX: 'center',
+            originY: 'bottom' - circleRadius/2,
+            selectable: false,
+            hoverCursor: 'cursor',
+            subTargetCheck: true
+        });
+        canvas.add(readyGroup);*/
+
+    }else{
+        readyText = null;
+        readyCircle = null;
+        canvas.clear();
+    }
+
+}
+
+
 function setupWindowChange(){
     window.onresize = function(event) {
         netframe.log('Window resize...');
@@ -202,7 +255,7 @@ function loadRewardScene(bubbleIdGuess, colorAnswer, money){
     */
 }
 
-let readyText;
+
 function loadSocialScene(){
     currentState = State.Avatar;
     canvas.clear();
@@ -405,7 +458,7 @@ function startRound(){
     canvas.clear();
     createGUI();
     //startCountDown(loadBubbleScene);
-    loadBubbleScene();
+    setReadyTextVisibility(true);
 }
 
 function loadBubbleScene(){
@@ -414,6 +467,7 @@ function loadBubbleScene(){
     createCardSet(modelController.getGameManager().moneyGroups);
     enableTracking();
     drawRoundNumber();
+
 }
 
 function drawRoundNumber(){

@@ -55,7 +55,7 @@ function cmdSelectBubble(bubbleIdGuess, moneyGroupId, clientId, mouseData){
 
     netframe.log('Saved game data: ' + JSON.stringify(gameData));
 
-    //TODO: Insert check to see if everyone is ready for Social round
+
     let allReady = true;
     let networkIdentities =  Object.values(netframe.getNetworkIdentities());
     netframe.log('Checking if all participants are ready...');
@@ -80,7 +80,12 @@ function cmdSelectBubble(bubbleIdGuess, moneyGroupId, clientId, mouseData){
                     for(let i in networkIdentities){
                         networkIdentities[i].selectedBubble = null;
                     }
-                    netframe.makeRPC('loadSocialScene', []);
+                    if(Object.values(netframe.getNetworkIdentities().length == 1)){
+                        startRound();
+                    }else{
+                        netframe.makeRPC('loadSocialScene', []);
+                    }
+
                 }, 4000);
         }
 
@@ -119,9 +124,37 @@ function cmdSelectParticipant(clientId, selectedParticipantsId, mouseData){
 
 }
 
+function cmdFinishedGame(canvasSize, clientId){
+    netframe.log('cmdFinishedGame() called with: ' + arguments);
+    //Find participant
+    let participant = db.participants.find(participant => participant.clientId === clientId);
+    participant.resolution = canvasSize;
+
+    let networkIdentity = netframe.getNetworkIdentityFromClientId(clientId);
+    networkIdentity.isReady = true;
+
+    //Check if everyone has finished
+    let allReady = true;
+    let networkIdentities =  Object.values(netframe.getNetworkIdentities());
+    netframe.log('Checking if all participants are ready...');
+    for(let i in networkIdentities){
+        netframe.log('NetworkIdentity: ' + JSON.stringify(networkIdentities[i]));
+        if(!networkIdentities[i].selectedBubble){
+            allReady = false;
+            break;
+        }
+    }
+
+    if(allReady){
+        //Everyone has finished the game
+        netframe.getServer().send('GameOver').toAdmin();
+    }
+}
+
 const commands = {
     'cmdSelectBubble': cmdSelectBubble,
-    'cmdSelectParticipant': cmdSelectParticipant
+    'cmdSelectParticipant': cmdSelectParticipant,
+    'cmdFinishedGame': cmdFinishedGame
 };
 
 //---------------------------------------------------------------
@@ -434,7 +467,7 @@ function saveToDisk(gameDataJSON){
 }
 
 function sendParticipantData(){
-    netframe.getServer().send('resParticipantData', db.participants).toAdmin();
+    netframe.getServer().send('resParticipantData', JSON.stringify(db.participants)).toAdmin();
 }
 
 function sendGameData(fileName){

@@ -14,8 +14,6 @@ const commands = {
         console.log('Resetting client...');
         serverController.sendGameData();
     },
-
-
 };
 
 export default commands;

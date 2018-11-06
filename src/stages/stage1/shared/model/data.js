@@ -18,12 +18,13 @@ export class RoundData {
 }
 
 export class ParticipantData {
-    constructor(id, age, gender, cpr, name){
+    constructor(id, age, gender, cpr, name, resolution){
         this.id = id;
         this.age = age;
         this.gender = gender;
         this.cpr = cpr;
         this.name = name;
+        this.resolution = resolution;
     }
 }
 

@@ -1,0 +1,21 @@
+
+<form id="gameSettings">
+    <H2>Game Settings</H2>
+    Number of rounds: <input type="number" name="numberOfRounds" value="1"><br>
+
+    <input type="radio" name="gameMode" value="risky" checked="checked"> Risky<br>
+    <input type="radio" name="gameMode" value="distributed"> Distributed<br>
+
+    <input id="startButton" type="button" value="Start">
+</form>
+
+<div id="activeGame">
+    <h3 id="roundId">Current round: Waiting for game to start</h3>
+    <button id="button-reset">
+        Reset
+    </button>
+</div>
+
+<div id="gameOver">
+
+</div>

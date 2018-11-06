@@ -7,6 +7,7 @@ import html from './stage0.html'
 import './stage0.css'
 
 import {ParticipantData} from "../../stage1/shared/model/data";
+import * as adminContent from "../../../adminHTML.html";
 
 // Export the complete stage as the default export
 export default {
@@ -52,6 +53,7 @@ export default {
         console.log('Sending ParticipantData: ' + JSON.stringify(data));
 
         client.send('sendFormData', data);
+          document.getElementById("stage0").innerHTML = ("<h1>Thank you. Please wait for other players to finish.</h1>");
       }
 
       console.log('logging ID: survey: ' + document.getElementById("survey"));

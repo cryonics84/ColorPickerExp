@@ -23,7 +23,7 @@ export default {
   events: {
       'sendFormData': function(server,client, data){
           console.log('Received form data from client: ' + JSON.stringify(data));
-          let participant = new ParticipantData(client, data.age, data.gender, data.cpr, data.name);
+          let participant = new ParticipantData(client, data.age, data.gender, data.cpr, data.name, data.resolution);
           db.participants.push(participant);
 
           checkIfPlayersReady(server);

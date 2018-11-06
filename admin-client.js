@@ -3,8 +3,12 @@ import createClient from 'monsterr'
 
 import html from './src/admin-client.html'
 import './src/admin-client.css'
-import {gameSettings} from "./src/stages/sharedDB";
-import * as db from "./dist/admin-client";
+//import {gameSettings} from "./src/stages/sharedDB";
+import * as db from "./src/stages/sharedDB";
+import * as adminContent from './src/adminHTML.html'
+import * as adminGameOver from './src/adminGameOver.html'
+
+
 
 let options = {
   canvasBackgroundColor: 'white',
@@ -52,6 +56,10 @@ let events = {
         console.log('Received finishedRegistration from server...');
         admin.getChat().append('finished registration');
     }
+    'GameOver': function (admin, data) {
+        console.log('Received GameOver event from server with data: ' + JSON.stringify(data));
+        gameOver();
+    },
 };
 let commands = {};
 
@@ -62,26 +70,7 @@ const admin = createClient({
   // no need to add stages to admin
 });
 
-// Button event handlers (if you need more you should probably put them in a separate file and import it here)
-$('#startButton').mouseup(e => {
-    e.preventDefault()
-    startGame();
-});
 
-$('#button-reset').mouseup(e => {
-    e.preventDefault()
-    resetGame();
-});
-
-$('#button-gameData').mouseup(e => {
-    e.preventDefault()
-    requestGameData();
-});
-
-$('#button-participantData').mouseup(e => {
-    e.preventDefault()
-    requestParticipantData();
-});
 
 
 
@@ -89,15 +78,38 @@ $('#button-participantData').mouseup(e => {
 
 let hasStarted = false;
 
+insertHTML();
+function insertHTML(){
+    console.log('loading html');
+    //$("#admin").load(adminContent);
+    //document.getElementById("admin").innerHTML='<object type="text/html" data=""></object>';
+    document.getElementById("admin").innerHTML = (adminContent);
+
+    // Button event handlers (if you need more you should probably put them in a separate file and import it here)
+    $('#startButton').mouseup(e => {
+        e.preventDefault()
+        startGame();
+    });
+
+    $('#button-reset').mouseup(e => {
+        e.preventDefault()
+        resetGame();
+    });
+
+
+}
+
 function init(){
     console.log('initializing...');
     if(!hasStarted){
         console.log('game has not started yet');
         $('#activeGame').hide();
+        $('#finishedGame').hide();
     }else{
         console.log('game has started yet');
         $('#activeGame').show();
         $('#gameSettings').hide();
+        $('#finishedGame').show();
     }
 
 }
@@ -116,6 +128,7 @@ function resetGame(){
     //RESET
     admin.sendCommand('resetClient');
     $('#activeGame').hide();
+    $('#finishedGame').hide();
 
 
     setTimeout(function(){
@@ -133,6 +146,7 @@ function startGame(){
     hasStarted = true;
     $('#activeGame').show();
     $('#gameSettings').hide();
+    $('#finishedGame').show();
 
     let gameSettings = document.getElementById("gameSettings");
 
@@ -158,4 +172,17 @@ function download(content, fileName, contentType) {
     a.click();
 }
 
+function gameOver(){
+    document.getElementById("gameOver").innerHTML = (adminGameOver);
+
+    $('#button-gameData').mouseup(e => {
+        e.preventDefault()
+        requestGameData();
+    });
+
+    $('#button-participantData').mouseup(e => {
+        e.preventDefault()
+        requestParticipantData();
+    });
+}
 

@@ -130,6 +130,11 @@ function cmdSelectParticipant(selectedParticipants, mouseData){
     netframe.makeCmd('cmdSelectParticipant', [netframe.getClientId(), selectedParticipants, mouseData]);
 }
 
+function cmdFinishedGame(canvasSize){
+    netframe.log('cmdFinishedGame() called with canvasSize: ' + canvasSize);
+    netframe.makeCmd('cmdFinishedGame', [canvasSize]);
+}
+
 //---------------------------------------------------------------
 // RPC
 //---------------------------------------------------------------

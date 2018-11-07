@@ -80,9 +80,12 @@ function cmdSelectBubble(bubbleIdGuess, moneyGroupId, clientId, mouseData){
                     for(let i in networkIdentities){
                         networkIdentities[i].selectedBubble = null;
                     }
-                    if(Object.values(netframe.getNetworkIdentities().length == 1)){
+                    netframe.log('Checking if SinglePlayer or Multiplayer');
+                    if(db.participants.length === 1){
+                        netframe.log('SinglePlayer Detected');
                         startRound();
                     }else{
+                        netframe.log('MultiPlayer Detected');
                         netframe.makeRPC('loadSocialScene', []);
                     }
 

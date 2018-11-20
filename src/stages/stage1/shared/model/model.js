@@ -45,12 +45,12 @@ class GameManager extends Entity{
         this.GAMESTATES = { WAITING: 0, PLAYING: 1, GAME_OVER: 2};
         this.COLORS = { RED: 0, GREEN: 1, BLUE: 2, YELLOW: 3, PURPLE: 4, PINK: 5};
 
-        this.DISTRUBUTION = {RED: 10, GREEN: 15, BLUE: 8, YELLOW: 7, PURPLE: 5, PINK: 15}; // 60
+        this.DISTRUBUTION = {RED: 10, GREEN: 15, BLUE: 8, YELLOW: 7, PURPLE: 5, ORANGE: 15}; // 60
 
         this.gameState = this.GAMESTATES.WAITING;
         this.selectedColor = null;
         this.moneyGroups = [];
-        this.round = 0;
+        this.round = [];
         this.maxRounds = 1;
         this.numberOfPlayers = 4;
         this.gameMode = "risky";

@@ -11,6 +11,8 @@ export default {
           console.log('Received setGameSettings with args: ' + JSON.stringify(data));
           db.gameSettings.maxRounds = Number(data[0]);
           db.gameSettings.gameMode = data[1];
+          db.gameSettings.networkMode = data[2] === 'multi';
+
       },
       'resetClient': function (server, _, ...args) {
           console.log('Resetting client...');

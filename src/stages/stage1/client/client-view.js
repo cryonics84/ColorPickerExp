@@ -371,7 +371,8 @@ function createAvatars(){
 
         subGroupArr.push(speechBubble);
 
-        let text = createText('Player: ' + networkIdentities[i].identityId + '\nT: ' + networkIdentities[i].totalScore + '\nP = ' + networkIdentities[i].popularityFactor + '%', {x: speechOffset.x, y: speechOffset.y - 10, originX: 'center', originY: 'center'}, 'green', 20);
+        // + '\nP = ' + networkIdentities[i].popularityFactor + '%'
+        let text = createText('Player: ' + (networkIdentities[i].identityId + 1) + '\nT: ' + networkIdentities[i].totalScore, {x: speechOffset.x, y: speechOffset.y - 10, originX: 'center', originY: 'center'}, 'green', 20);
         subGroupArr.push(text);
 
         // Subgroup
@@ -507,6 +508,24 @@ function loadFinalScene(){
     let totalScoreText = createText(scoreText, position2, color2, 70);
     addToCanvas(totalScoreText);
 
+    let contentLink = 'Now please complete this survey.';
+
+    let positionLink = {x: centerPoint.x, y: centerPoint.y + 100, originX: 'center', originY: 'center'};
+    let colorLink = 'black';
+    let urlText = createText(contentLink, positionLink, colorLink, 30);
+
+    urlText.on("mousedown", function (options) {
+        netframe.log('Redirecting to survey...');
+        window.location.href = "https://aarhus.eu.qualtrics.com/jfe/form/SV_24UqZr5mtLPYbsh" + "?userID=" + netframe.getClientId();
+    });
+/*
+    urlText.setSelectionStyles({ underline: true }, 8, 18);
+    urlText.setSelectionStyles({linkURL: "https://www.google.com/"}, 2, 4);
+    urlText.setSelectionStyles({linkName:"google.com"}, 8, 18);
+    urlText.setSelectionStyles({fill:"rgba(0,0,255,1)"}, 8, 18);
+    */
+    addToCanvas(urlText);
+
     let resolution = {
         x: canvas.getWidth(),
         y: canvas.getHeight(),
@@ -546,7 +565,8 @@ function createText(content, position, color, fontSize = 14){
         hoverCursor: 'cursor',
         fontSize: fontSize,
         lineHeight : 1,
-        textAlign: 'center'
+        textAlign: 'center',
+        editable: false
     });
     netframe.log('created Text: ' + JSON.stringify(playersTxt));
     return text;

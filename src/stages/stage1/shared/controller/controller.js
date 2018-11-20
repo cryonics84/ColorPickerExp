@@ -30,9 +30,9 @@ function createCardSet(moneyGroups){
     gameManager.moneyGroups = moneyGroups;
 }
 
-function startRound(currentRound) {
-    netframe.log('startRound() called in modelController');
-    gameManager.round = currentRound;
+function startRound(roundIndex, currentRound) {
+    netframe.log('startRound() called in modelController with roundPlayerIndex: ' + roundIndex + ', round: ' + currentRound);
+    gameManager.round[roundIndex] = currentRound;
 
     for (let identityIndex in netframe.getNetworkIdentities()) {
         let networkIdentity = netframe.getNetworkIdentities()[identityIndex]

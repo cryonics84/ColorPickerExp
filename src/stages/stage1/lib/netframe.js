@@ -172,7 +172,8 @@ function clientConnected(client){
     if(!networkIdentity){
         // Client needs new network identity
         log('New client');
-        let networkIdentity = createNetworkIdentity(client, getNetworkID());
+        let networkId = server.getPlayers().findIndex(player => player === client);
+        let networkIdentity = createNetworkIdentity(client, networkId);
 
         log('Sending GameState to client...');
         sendGameStateToClient(client, getSerializedGameState());
@@ -462,6 +463,7 @@ function updateEntity(entityId, entity){
 }
 
 function getNetworkIdentities(){
+    log('Returning networkIdentities: ' + JSON.stringify(Object.values(networkIdentities)));
     return networkIdentities;
 }
 

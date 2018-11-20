@@ -163,11 +163,12 @@ function startGame(){
 
     let maxRounds = gameSettings.numberOfRounds.value;
     let gameMode = gameSettings.gameMode.value;
+    let networkMode = gameSettings.networkMode.value;
 
     console.log('Starting ' + gameMode + ' game with maxRounds: ' + maxRounds);
 
     admin.sendCommand('start');
-    admin.sendCommand('setGameSettings', [maxRounds, gameMode]);
+    admin.sendCommand('setGameSettings', [maxRounds, gameMode, networkMode]);
 
 }
 

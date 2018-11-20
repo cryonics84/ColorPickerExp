@@ -1,5 +1,7 @@
+
+
 export class GameData {
-    constructor(riskyAnswers, ambAnswers, maxPlayers, totalRounds, gameMode, roundData, participantData, moneyGroups){
+    constructor(riskyAnswers, ambAnswers, maxPlayers, totalRounds, gameMode, roundData, moneyGroups){
         this.riskyAnswers = riskyAnswers;
         this.ambAnswers = ambAnswers;
         this.maxPlayers = maxPlayers;
@@ -11,9 +13,9 @@ export class GameData {
 }
 
 export class RoundData {
-    constructor(round, participantRoundData){
+    constructor(round){
         this.round = round;
-        this.participantRoundData = participantRoundData;
+        this.participantRoundData = [];
     }
 }
 

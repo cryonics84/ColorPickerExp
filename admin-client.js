@@ -18,6 +18,14 @@ let options = {
 }
 
 let events = {
+    'clientConnected': function (admin, data) {
+        console.log('Received clientConnected event from server with data: ' + JSON.stringify(data));
+        updatePlayerList(data.clients);
+    },
+    'clientDisconnected': function (admin, data) {
+        console.log('Received clientDisconnected event from server with data: ' + JSON.stringify(data));
+        updatePlayerList(data.clients);
+    },
     'updateRounds': function (admin, data) {
         console.log('Received printEntities event from server with data: ' + JSON.stringify(data));
         updateRounds(data);
@@ -69,9 +77,6 @@ const admin = createClient({
   options
   // no need to add stages to admin
 });
-
-
-
 
 
 //----------------------------
@@ -182,6 +187,18 @@ function download(content, fileName, contentType) {
     a.href = URL.createObjectURL(file);
     a.download = fileName;
     a.click();
+}
+
+function updatePlayerList(clients){
+    let ul = document.getElementById("playerList");
+
+    ul.innerHTML = "";
+
+    for(let clientIndex in clients){
+        let li = document.createElement("li");
+        li.appendChild(document.createTextNode(clients[clientIndex]));
+        ul.appendChild(li);
+    }
 }
 
 function gameOver(){

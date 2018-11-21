@@ -264,7 +264,7 @@ function loadSocialScene(){
     netframe.getMyNetworkIdentity().selectedPartipants = [];
 
 
-    readyText = createText('Click here when you are ready.', {x: centerPoint.x, y: canvas.height - 100, originX: 'center', originY: 'center'}, 'red', 30);
+    readyText = createText('Click here when you are ready.', {x: centerPoint.x, y: canvas.height * 0.95, originX: 'center', originY: 'center'}, 'red', 30);
     readyText.on("mousedown", function (options) {
         netframe.log('Clicked on ready text');
         clickedReady();
@@ -272,7 +272,7 @@ function loadSocialScene(){
     });
     addToCanvas(readyText);
 
-    drawRoundNumber();
+    //drawRoundNumber();
 }
 
 function clickedReady(){
@@ -312,9 +312,26 @@ function createAvatars(){
     let networkIdentities = Object.values(netframe.getNetworkIdentities());
     netframe.log('Got network identities: ' + JSON.stringify(networkIdentities));
 
+    let gridSizePercentage = 100/(Math.ceil(Math.sqrt(networkIdentities.length))); //%
+    let maxSize = Math.min(canvas.getWidth(), canvas.getHeight());
+    let gridSize = maxSize * (gridSizePercentage / 100);
+    let gridCount = Math.floor(maxSize / gridSize);
+
+    netframe.log('Calculated bounds of screen\nmaxSize: ' + maxSize + '\ngridSize: ' + gridSize + '\ngridCount: ' + gridCount);
+
+    let grid = [];
+    for (let x = 0; x < gridCount; x++){
+        grid[x] = [];
+        for (let y = 0; y < gridCount; y++){
+            grid[x][y] = {x: x * gridSize, y: y * gridSize};
+        }
+    }
+
+    netframe.log('Finished calculating grid absolute values : ' + JSON.stringify(grid));
+
     let spacing = {x: canvas.getWidth() * 0.25, y: canvas.getHeight() * 0.25};
-    let avatarSize = 100;
-    let speechSize = {x: 200, y: 200};
+    let avatarSize = gridSize/2;
+    let speechSize = {x: gridSize/2, y: gridSize/2};
     let speechOffset = {x: speechSize.x * 0.5, y: -speechSize.y * 0.5};
 
     let groupArr = [];
@@ -334,12 +351,17 @@ function createAvatars(){
         let subGroupArr = [];
 
 
-        let avatarPos = getAvatarPosition(avatarPositionCounter);
+        //let avatarPos = getAvatarPosition(avatarPositionCounter);
+        let x = i % gridCount;
+        let y = ((i-x) / gridCount);
+        netframe.log('Getting position of X: ' + x + ', Y: ' + y + ', in grid' );
+        let avatarPos = grid[x][y];
+
         avatarPositionCounter++;
         netframe.log('Got avatar position: ' + JSON.stringify(avatarPos));
         let position = {
-            x: avatarPos.x * spacing.x,
-            y: avatarPos.y * spacing.y,
+            x: avatarPos.x,// * spacing.x,
+            y: avatarPos.y,// * spacing.y,
         };
 
 
@@ -387,11 +409,24 @@ function createAvatars(){
 
     // Main group
     let group = createGroup(groupArr);
+    /*
+    let group = new fabric.Group(groupArr, {
+        left: 0,
+        top: 0,
+        originX: 'left',
+        originY: 'top',
+        selectable: false,
+        hoverCursor: 'cursor',
+        subTargetCheck: true
+    });
+    */
     canvas.add(group);
     netframe.log('--- Created Avatar Group:\n' + JSON.stringify(group));
 
 }
 
+
+/*
 function getAvatarPosition(i){
     netframe.log('Getting AvatarPosition of i: ' + i);
     switch (i) {
@@ -408,7 +443,7 @@ function getAvatarPosition(i){
             return {x: 0, y: 0};
     }
 }
-
+*/
 function createSubGroup(groupArr, position){
     return new fabric.Group(groupArr, {
         left: position.x,
@@ -658,7 +693,7 @@ function redrawScene(){
             loadSocialScene();
             break;
         case 5:
-
+            loadFinalScene();
             break;
     }
 }

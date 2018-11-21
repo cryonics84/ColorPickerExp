@@ -60,8 +60,11 @@ function selectedParticipant(clientId, selectedParticipantsId){
     identity.isReady = true;
     identity.selectedPartipants = selectedParticipantsId;
 
+    netframe.getNetworkIdentityFromClientId(clientId).totalScore -= 50 * selectedParticipantsId.length;
+
     for(let i in selectedParticipantsId){
-        netframe.getNetworkIdentityFromClientId(selectedParticipantsId[i]).popularityFactor++;
+        //netframe.getNetworkIdentityFromClientId(selectedParticipantsId[i]).popularityFactor++;
+
     }
 
 }

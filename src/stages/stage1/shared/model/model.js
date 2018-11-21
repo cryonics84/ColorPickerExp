@@ -43,7 +43,7 @@ class GameManager extends Entity{
         super(entityId, null);
 
         this.GAMESTATES = { WAITING: 0, PLAYING: 1, GAME_OVER: 2};
-        this.COLORS = { RED: 0, GREEN: 1, BLUE: 2, YELLOW: 3, PURPLE: 4, PINK: 5};
+        this.COLORS = { RED: 0, GREEN: 1, BLUE: 2, YELLOW: 3, PURPLE: 4, ORANGE: 5};
 
         this.DISTRUBUTION = {RED: 10, GREEN: 15, BLUE: 8, YELLOW: 7, PURPLE: 5, ORANGE: 15}; // 60
 

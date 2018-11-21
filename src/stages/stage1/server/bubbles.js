@@ -1,9 +1,9 @@
-//this.COLORS = { RED: 0, GREEN: 1, BLUE: 2, YELLOW: 3, PURPLE: 4, PINK: 5};
+//this.COLORS = { RED: 0, GREEN: 1, BLUE: 2, YELLOW: 3, PURPLE: 4, ORANGE: 5};
 
 let bubbles = [
     [
         ['YELLOW'],
-        ['PINK'],
+        ['ORANGE'],
         ['RED'],
         ['PURPLE'],
         ['BLUE'],
@@ -12,26 +12,26 @@ let bubbles = [
     [
         ['RED', 'GREEN'],
         ['PURPLE', 'YELLOW'],
-        ['PINK', 'BLUE'],
+        ['ORANGE', 'BLUE'],
         ['BLUE', 'PURPLE'],
         ['YELLOW', 'GREEN'],
-        ['RED', 'PINK'],
+        ['RED', 'ORANGE'],
     ],
     [
-        ['RED', 'YELLOW', 'PINK'],
+        ['RED', 'YELLOW', 'ORANGE'],
         ['PURPLE', 'BLUE', 'GREEN'],
         ['PURPLE', 'YELLOW', 'GREEN'],
-        ['PINK', 'RED', 'BLUE'],
+        ['ORANGE', 'RED', 'BLUE'],
         ['BLUE', 'PURPLE', 'RED'],
-        ['GREEN', 'YELLOW', 'PINK'],
+        ['GREEN', 'YELLOW', 'ORANGE'],
     ],
     [
-        ['GREEN', 'RED', 'YELLOW', 'PINK'],
-        ['PURPLE', 'YELLOW', 'PINK', 'RED'],
+        ['GREEN', 'RED', 'YELLOW', 'ORANGE'],
+        ['PURPLE', 'YELLOW', 'ORANGE', 'RED'],
         ['PURPLE', 'YELLOW', 'RED', 'BLUE'],
-        ['GREEN', 'PURPLE', 'BLUE', 'PINK'],
+        ['GREEN', 'PURPLE', 'BLUE', 'ORANGE'],
         ['YELLOW', 'PURPLE', 'BLUE', 'GREEN'],
-        ['RED', 'PINK', 'BLUE', 'GREEN'],
+        ['RED', 'ORANGE', 'BLUE', 'GREEN'],
     ]
 ];
 

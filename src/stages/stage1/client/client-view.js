@@ -312,10 +312,11 @@ function createAvatars(){
     let networkIdentities = Object.values(netframe.getNetworkIdentities());
     netframe.log('Got network identities: ' + JSON.stringify(networkIdentities));
 
-    let gridSizePercentage = 100/(Math.ceil(Math.sqrt(networkIdentities.length))); //%
+    let gridCount = Math.ceil(Math.sqrt(networkIdentities.length));
+    let gridSizePercentage = 100/(gridCount); //%
     let maxSize = Math.min(canvas.getWidth(), canvas.getHeight());
     let gridSize = maxSize * (gridSizePercentage / 100);
-    let gridCount = Math.floor(maxSize / gridSize);
+    //let gridCount = Math.floor(maxSize / gridSize);
 
     netframe.log('Calculated bounds of screen\nmaxSize: ' + maxSize + '\ngridSize: ' + gridSize + '\ngridCount: ' + gridCount);
 

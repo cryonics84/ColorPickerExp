@@ -106,9 +106,9 @@ function loadSocialScene(){
     view.loadAvatarScene();
 }
 
-function loadFinalScene(){
+function loadFinalScene(score){
     netframe.log('loadFinalScene() called on clientController');
-    view.loadFinalScene();
+    view.loadFinalScene(score);
 }
 
 function reset(){

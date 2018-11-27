@@ -36,7 +36,9 @@ function cmdSelectBubble(bubbleIdGuess, moneyGroupId, clientId, mouseData){
         playerIndex = 0;
     }
 
-    let colorAnswer = answers[modelController.getGameManager().round[playerIndex]-1];
+    let round = modelController.getGameManager().round[playerIndex]-1;
+
+    let colorAnswer = answers[round];
     let moneyGroup = modelController.getGameManager().moneyGroups[moneyGroupId - 1];
     let bubble = modelController.getCardGroupById(bubbleIdGuess);
 
@@ -54,7 +56,7 @@ function cmdSelectBubble(bubbleIdGuess, moneyGroupId, clientId, mouseData){
         money = -moneyGroup.value;
     }
 
-    netframe.makeRPC('playerSelectBubble', [bubbleIdGuess, colorAnswer, money, clientId]);
+    netframe.makeRPC('playerSelectBubble', [bubbleIdGuess, colorAnswer, money, clientId, round]);
 
     //Save data
     netframe.log('Saving bubble data...');
@@ -66,8 +68,6 @@ function cmdSelectBubble(bubbleIdGuess, moneyGroupId, clientId, mouseData){
     netframe.log('Logging GameManager: ' + JSON.stringify(modelController.getGameManager()));
     netframe.log('Rounds in GameManager: ' + modelController.getGameManager().round + '. Client IdentityID: ' + identity.identityId);
 
-
-    let round = modelController.getGameManager().round[playerIndex] - 1;
     netframe.log('Round: ' + round + ', for player id index: ' + playerIndex);
     gameData.roundData[round].participantRoundData[identity.identityId].bubbleSceneData.push(bubbleSceneData);
 
@@ -572,13 +572,48 @@ function finishedSaving(){
     netframe.log('Finished saving data to file!');
 }
 
+function calculateFinalScore(networkIdentity){
+    netframe.log('Calculating scores...');
+
+    netframe.log('Client: ' + networkIdentity.clientId + ', has scores: ' + networkIdentity.scores);
+    let multiplier = modelController.getGameManager().scoreMultiplier;
+    let numberOfRandomScores = modelController.getGameManager().numberOfRandomScores;
+    let randomScores = getMeRandomElements(networkIdentity.scores, numberOfRandomScores);
+
+    let finalScore = 0;
+    for(let i = 0; i < numberOfRandomScores; i++){
+        finalScore += randomScores[i] * multiplier;
+    }
+
+    return finalScore;
+}
+
+function getMeRandomElements(sourceArray, neededElements) {
+    let result = [];
+    for (let i = 0; i < neededElements; i++) {
+        result.push(sourceArray[Math.floor(Math.random()*sourceArray.length)]);
+    }
+    return result;
+}
+
 function gameOver(isFinished, clientId){
     netframe.log('gameOver() called on server');
 
     if(clientId){
-        netframe.makeRPC('loadFinalScene', [], clientId);
+        let networkIdentity = netframe.getNetworkIdentityFromClientId(clientId);
+        let finalScore = calculateFinalScore(networkIdentity);
+        networkIdentity.finalScore = finalScore;
+
+        netframe.makeRPC('loadFinalScene', [finalScore], clientId);
     }else{
-        netframe.makeRPC('loadFinalScene', []);
+        let networkIdentities = Object.values(netframe.getNetworkIdentities());
+        for (let ni in networkIdentities){
+            let networkIdentity = networkIdentities[ni];
+            let finalScore = calculateFinalScore(networkIdentity);
+            networkIdentity.finalScore = finalScore;
+
+            netframe.makeRPC('loadFinalScene', [finalScore], networkIdentities[ni].clientId);
+        }
     }
 
     if(isFinished){

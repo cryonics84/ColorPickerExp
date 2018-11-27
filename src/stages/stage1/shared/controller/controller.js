@@ -1,6 +1,7 @@
 import model from '../model/model'
 import {sharedInterface as netframe} from '../../lib/netframe'
 import view from "../../client/client-view";
+import {NetworkStates} from "../../lib/entity";
 
 //---------------------------------------------------------------
 // Variables
@@ -41,13 +42,15 @@ function startRound(roundIndex, currentRound) {
     }
 }
 
-function playerSelectBubble(bubbleIdGuess, colorAnswer, money, clientId){
+function playerSelectBubble(bubbleIdGuess, colorAnswer, money, clientId, round){
     netframe.log('playerSelectBubble() called with bubbleIdGuess: ' + bubbleIdGuess + ', and clientId: ' + clientId);
 
     let networkIdentity = netframe.getNetworkIdentityFromClientId(clientId);
     networkIdentity.selectedBubble = getCardGroupById(bubbleIdGuess);
 
     networkIdentity.totalScore += money;
+    netframe.log('Setting score: ' + money +', of round: '  + round + ', for client: ' + clientId);
+    networkIdentity.scores[round] = money;
 
     netframe.log('Set networkIdentity: ' + JSON.stringify(networkIdentity));
 
@@ -77,7 +80,7 @@ function loadSocialScene(){
     netframe.log('loadSocialScene() called on modelController');
 }
 
-function loadFinalScene(){
+function loadFinalScene(score){
     netframe.log('loadFinalScene() called on modelController');
 }
 
@@ -96,7 +99,22 @@ function createGameManager(entityId){
     return gameManager;
 }
 
-function reset(){}
+function reset(){
+    let networkIdentities = Object.values(netframe.getNetworkIdentities());
+    for (let ni in networkIdentities){
+
+        networkIdentities[ni].state = NetworkStates.JOINED;
+        networkIdentities[ni].selectedBubble = null;
+        //networkIdentities[ni].contributionFactor = 0;
+        networkIdentities[ni].popularityFactor = 0;
+        networkIdentities[ni].isReady = false;
+        networkIdentities[ni].selectedPartipants = [];
+        networkIdentities[ni].totalScore = 0;
+        networkIdentities[ni].scores = [];
+        networkIdentities[ni].isReady = false;
+        networkIdentities[ni].finalScore = 0;
+    }
+}
 
 //---------------------------------------------------------------
 // getters and util functions
@@ -183,5 +201,6 @@ export default {
     selectedParticipant: selectedParticipant,
     reset: reset,
     setNumberOfPlayers: setNumberOfPlayers,
-    setNumberOfRounds: setNumberOfRounds
+    setNumberOfRounds: setNumberOfRounds,
+    loadFinalScene: loadFinalScene
 };

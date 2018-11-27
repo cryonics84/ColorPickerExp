@@ -26,6 +26,10 @@ let events = {
         console.log('Received clientDisconnected event from server with data: ' + JSON.stringify(data));
         updatePlayerList(data.clients);
     },
+    'resConnections': function (admin, data) {
+        console.log('Received resConnections event from server with data: ' + JSON.stringify(data));
+        updatePlayerList(data.clients);
+    },
     'updateRounds': function (admin, data) {
         console.log('Received printEntities event from server with data: ' + JSON.stringify(data));
         updateRounds(data);
@@ -113,6 +117,8 @@ function insertHTML(){
     });
 
     hideStuff();
+
+    admin.sendCommand('getConnections');
 }
 
 function hideStuff(){

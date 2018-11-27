@@ -40,7 +40,7 @@ export class NetworkIdentity {
         this.isReady = false;
         this.selectedPartipants = [];
         this.totalScore = 0;
-
+        this.scores = [];
         this.isReady = false;
     }
 }

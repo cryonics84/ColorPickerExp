@@ -518,8 +518,8 @@ function drawRoundNumber(){
     addToCanvas(roundText);
 }
 
-function loadFinalScene(){
-    netframe.log('loadFinalScene() called');
+function loadFinalScene(score){
+    netframe.log('loadFinalScene() called with score: ' + score);
     canvas.clear();
     currentState = State.End;
 
@@ -529,7 +529,7 @@ function loadFinalScene(){
     let roundText = createText(content, position, color, 30);
     addToCanvas(roundText);
 
-    let scoreText = netframe.getMyNetworkIdentity().totalScore.toString();
+    let scoreText = score.toString();
     netframe.log('final score: ' + scoreText);
     /*
     // all players

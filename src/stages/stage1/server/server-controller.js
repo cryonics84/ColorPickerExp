@@ -18,10 +18,6 @@ let gameData;
 
 
 
-//---------------------------------------------------------------
-// Commands
-//---------------------------------------------------------------
-
 // Command from client
 function cmdSelectBubble(bubbleIdGuess, moneyGroupId, clientId, mouseData){
     netframe.log('called cmdSelectBubble() on server with bubble id: ' + bubbleIdGuess + ', moneyGroupId: ' + moneyGroupId + ', and networkIdentity: ' + clientId);
@@ -128,6 +124,10 @@ function cmdSelectBubble(bubbleIdGuess, moneyGroupId, clientId, mouseData){
 
     }
 }
+
+//---------------------------------------------------------------
+// Commands
+//---------------------------------------------------------------
 
 function cmdSelectParticipant(clientId, selectedParticipantsId, mouseData){
     let identity = netframe.getNetworkIdentityFromClientId(clientId);
@@ -590,8 +590,13 @@ function calculateFinalScore(networkIdentity){
 
 function getMeRandomElements(sourceArray, neededElements) {
     let result = [];
+    let tempArr = sourceArray.slice(0);
+
     for (let i = 0; i < neededElements; i++) {
-        result.push(sourceArray[Math.floor(Math.random()*sourceArray.length)]);
+        let randomIndex = Math.floor(Math.random()*tempArr.length);
+        result.push(sourceArray[randomIndex]);
+        //Remove it so we don't get duplicates
+        tempArr.splice(randomIndex, 1);
     }
     return result;
 }

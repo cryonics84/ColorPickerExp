@@ -26,6 +26,7 @@ let emojiImg, speechBubbleImg;
 let mouseData = [];
 let mouseTimer;
 
+let currentRound = 0;
 
 let State = {Waiting: 0, Lobby: 1, Bubble: 2, Reward: 3, Avatar: 4, End: 5};
 let currentState = State.Waiting;
@@ -241,9 +242,9 @@ function loadRewardScene(bubbleIdGuess, colorAnswer, money){
 
     let moneyContent = "";
     if(money > 0){
-        moneyContent = 'You guessed right! You earned: ' + money.toString() +'\nYour total: ' + netframe.getMyNetworkIdentity().totalScore;
+        moneyContent = 'You guessed right! You earned: ' + money.toString();// +'\nYour total: ' + netframe.getMyNetworkIdentity().totalScore;
     }else{
-        moneyContent = 'You guessed wrong! You lost: ' + (money).toString() +'\nYour total: ' + netframe.getMyNetworkIdentity().totalScore;
+        moneyContent = 'You guessed wrong! You lost: ' + (money).toString();// +'\nYour total: ' + netframe.getMyNetworkIdentity().totalScore;
     }
     let moneyText = createText(moneyContent, {x: centerPoint.x, y: centerPoint.y + 200, originX: 'center', originY: 'center'}, 'black', 45);
     addToCanvas(moneyText);
@@ -491,8 +492,9 @@ function startCountDown(callback){
     }, 1000);
 }
 
-function startRound(){
+function startRound(round){
     canvas.clear();
+    currentRound = round;
     createGUI();
     //startCountDown(loadBubbleScene);
     setReadyTextVisibility(true);
@@ -509,7 +511,10 @@ function loadBubbleScene(){
 
 function drawRoundNumber(){
     netframe.log('drawRoundNumber() called');
-    let content = 'Round ' + modelController.getGameManager().round + ' / ' + modelController.getGameManager().maxRounds;
+
+    //let round = singleMode ? modelController.getGameManager().round[netframe.getMyNetworkIdentity().id] : modelController.getGameManager().round[0];
+
+    let content = 'Round ' + currentRound + ' / ' + modelController.getGameManager().maxRounds;
     /*
     if(netframe.getMyNetworkIdentity()){
         content += '\nYour total: ' + netframe.getMyNetworkIdentity().totalScore
@@ -647,6 +652,7 @@ function render(){
 function reset() {
     entityViewMap = new Map();
 
+    currentRound = 0;
     disableTracking();
     removeWindowChange()
 }

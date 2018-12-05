@@ -286,7 +286,7 @@ function startRound(clientId){
 
                 // notify clients
                 netframe.log('Sending startRound RPC for client: ' + networkIdentity.clientId);
-                netframe.makeRPC('startRound', [id, modelController.getGameManager().round[id]], networkIdentity.clientId);
+                netframe.makeRPC('startRound', [id, modelController.getGameManager().round[id],], networkIdentity.clientId);
             }
         }
     }else{
@@ -632,7 +632,7 @@ function gameOver(isFinished, clientId){
 
             netframe.log('Saving client final score to gameData');
             //Save score to gameData
-            gameData.finalScore.push({id: clientId, score: finalScore});
+            gameData.finalScore.push({id: networkIdentity.clientId, score: finalScore});
 
             netframe.makeRPC('loadFinalScene', [finalScore], networkIdentities[ni].clientId);
         }

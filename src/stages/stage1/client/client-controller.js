@@ -91,9 +91,9 @@ function playerSelectBubble(bubbleIdGuess, colorAnswer, money, clientId){
     }
 }
 
-function startRound(){
+function startRound(roundIndex, currentRound){
     netframe.log('startRound() called in clientController');
-    view.startRound();
+    view.startRound(currentRound);
 }
 
 function loadLobby(){

@@ -613,6 +613,9 @@ function gameOver(isFinished, clientId){
         let finalScore = calculateFinalScore(networkIdentity);
         networkIdentity.finalScore = finalScore;
 
+        //Save score to gameData
+        gameData.finalScore.push({id: clientId, score: finalScore});
+
         netframe.makeRPC('loadFinalScene', [finalScore], clientId);
     }else{
         let networkIdentities = Object.values(netframe.getNetworkIdentities());

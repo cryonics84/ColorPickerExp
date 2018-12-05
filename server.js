@@ -26,6 +26,14 @@ let commands = {
         let msg = {clients: server.getPlayers()};
         server.send('resConnections', msg).toAdmin();
     },
+    'reqGameData': function (server, _, ...args) {
+        console.log('reqGameData command received on server..');
+        serverController.sendGameData();
+    },
+    'reqParticipantData': function (server, _, ...args) {
+        console.log('reqParticipantData command received on server..');
+        serverController.sendParticipantData();
+    },
 }
 
 const monsterr = createServer({

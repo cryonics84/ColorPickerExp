@@ -6,14 +6,6 @@ const commands = {
         console.log('Resetting client...');
         serverController.reset();
     },
-    'reqGameData': function (server, _, ...args) {
-        console.log('Resetting client...');
-        serverController.sendGameData();
-    },
-    'reqParticipantData': function (server, _, ...args) {
-        console.log('Resetting client...');
-        serverController.sendParticipantData();
-    },
 };
 
 export default commands;

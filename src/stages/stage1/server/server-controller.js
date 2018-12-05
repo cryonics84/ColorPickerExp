@@ -557,15 +557,19 @@ function saveToDisk(gameDataJSON){
 }
 
 function sendParticipantData(){
+    netframe.log('sendParticipantData() called on servercontroller...');
     netframe.getServer().send('resParticipantData', JSON.stringify(db.participants)).toAdmin();
 }
 
 function sendGameData(){
+    netframe.log('sendGameData() called on servercontroller...');
     fs.readFile('myTestFile.json', function read(err, data) {
         if (err) {
+            netframe.log('Error!!');
             throw err;
         }
 
+        netframe.log('sending data: ' + JSON.stringify(gameData));
         netframe.getServer().send('resGameData', data).toAdmin();
     });
 }
@@ -589,6 +593,7 @@ function calculateFinalScore(networkIdentity){
     // FIXME: This is a kludge to get the right amount
     finalScore += 110;
 
+    netframe.log('Finished calculating final scores: ' + finalScore);
     return finalScore;
 }
 
@@ -613,6 +618,7 @@ function gameOver(isFinished, clientId){
         let finalScore = calculateFinalScore(networkIdentity);
         networkIdentity.finalScore = finalScore;
 
+        netframe.log('Saving client final score to gameData');
         //Save score to gameData
         gameData.finalScore.push({id: clientId, score: finalScore});
 
@@ -624,6 +630,10 @@ function gameOver(isFinished, clientId){
             let finalScore = calculateFinalScore(networkIdentity);
             networkIdentity.finalScore = finalScore;
 
+            netframe.log('Saving client final score to gameData');
+            //Save score to gameData
+            gameData.finalScore.push({id: clientId, score: finalScore});
+
             netframe.makeRPC('loadFinalScene', [finalScore], networkIdentities[ni].clientId);
         }
     }
@@ -631,7 +641,6 @@ function gameOver(isFinished, clientId){
     if(isFinished){
         saveToDisk(JSON.stringify(gameData));
     }
-
 
 }
 

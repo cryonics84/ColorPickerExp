@@ -395,7 +395,7 @@ function createAvatars(round){
         subGroupArr.push(speechBubble);
 
         // + '\nP = ' + networkIdentities[i].popularityFactor + '%'
-        let text = createText('Player: ' + (networkIdentities[i].identityId + 1) + '\nT: ' + networkIdentities[i].scores[round], {x: speechOffset.x, y: speechOffset.y - 10, originX: 'center', originY: 'center'}, 'green', 20);
+        let text = createText('Player: ' + (networkIdentities[i].identityId + 1) + '\nT: ' + networkIdentities[i].lastScore, {x: speechOffset.x, y: speechOffset.y - 10, originX: 'center', originY: 'center'}, 'green', 20);
         subGroupArr.push(text);
 
         // Subgroup
@@ -545,7 +545,7 @@ function loadFinalScene(score){
     let totalScoreText = createText(scoreText, position2, color2, 70);
     addToCanvas(totalScoreText);
 
-    let contentLink = 'Now please complete this survey.';
+    let contentLink = 'Now please complete the survey by clicking on this text.';
 
     let positionLink = {x: centerPoint.x, y: centerPoint.y + 100, originX: 'center', originY: 'center'};
     let colorLink = 'black';

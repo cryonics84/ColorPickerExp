@@ -9,7 +9,7 @@ export class GameData {
         this.gameMode = gameMode;
         this.roundData = roundData;
         this.moneyGroups = moneyGroups;
-        this.finalResult = [];
+        this.finalScore = [];
 
     }
 }

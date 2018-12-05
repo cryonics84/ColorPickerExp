@@ -48,6 +48,7 @@ function playerSelectBubble(bubbleIdGuess, colorAnswer, money, clientId, round){
     let networkIdentity = netframe.getNetworkIdentityFromClientId(clientId);
     networkIdentity.selectedBubble = getCardGroupById(bubbleIdGuess);
 
+    networkIdentity.lastScore = money;
     networkIdentity.totalScore += money;
     netframe.log('Setting score: ' + money +', of round: '  + round + ', for client: ' + clientId);
     networkIdentity.scores[round] = money;

@@ -56,7 +56,7 @@ function playerSelectBubble(bubbleIdGuess, colorAnswer, money, clientId, round){
 
 }
 
-function selectedParticipant(clientId, selectedParticipantsId){
+function selectedParticipant(clientId, round, selectedParticipantsId){
     netframe.log('selectedParticipant() called on modelController');
 
     let identity = netframe.getNetworkIdentityFromClientId(clientId);
@@ -64,6 +64,8 @@ function selectedParticipant(clientId, selectedParticipantsId){
     identity.selectedPartipants = selectedParticipantsId;
 
     netframe.getNetworkIdentityFromClientId(clientId).totalScore -= 50 * selectedParticipantsId.length;
+    // TODO(dan): Check that this correctly subtracts points for clicking other participants
+    identity.scores[round] -= 50 * selectedParticipantsId.length;
 
     for(let i in selectedParticipantsId){
         //netframe.getNetworkIdentityFromClientId(selectedParticipantsId[i]).popularityFactor++;

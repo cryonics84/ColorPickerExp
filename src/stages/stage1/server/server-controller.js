@@ -140,7 +140,9 @@ function cmdSelectParticipant(clientId, selectedParticipantsId, mouseData){
         playerIndex = 0;
     }
 
-    netframe.makeRPC('selectedParticipant',[clientId, selectedParticipantsId]);
+    // TODO(dan): Check if round has been added correctly
+    let round = modelController.getGameManager().round[playerIndex]-1;
+    netframe.makeRPC('selectedParticipant',[clientId, round, selectedParticipantsId]);
 
     // Save data
     let socialSceneData = new dataClasses.SocialSceneData(identity.popularityFactor, selectedParticipantsId, mouseData);
@@ -584,6 +586,8 @@ function calculateFinalScore(networkIdentity){
     for(let i = 0; i < numberOfRandomScores; i++){
         finalScore += randomScores[i] * multiplier;
     }
+    // FIXME: This is a kludge to get the right amount
+    finalScore += 110;
 
     return finalScore;
 }

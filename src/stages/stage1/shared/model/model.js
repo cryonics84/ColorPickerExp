@@ -55,8 +55,8 @@ class GameManager extends Entity{
         this.numberOfPlayers = 4;
         this.gameMode = "risky";
 
-        this.numberOfRandomScores = 10;
-        this.scoreMultiplier = 0.1;
+        this.numberOfRandomScores = 1;
+        this.scoreMultiplier = 0.05;
         this.finalScore = 0;
     }
 

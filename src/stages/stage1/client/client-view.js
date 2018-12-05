@@ -256,10 +256,10 @@ function loadRewardScene(bubbleIdGuess, colorAnswer, money){
 }
 
 
-function loadSocialScene(){
+function loadSocialScene(round){
     currentState = State.Avatar;
     canvas.clear();
-    createAvatars();
+    createAvatars(round);
     enableTracking();
     netframe.getMyNetworkIdentity().selectedPartipants = [];
 
@@ -306,7 +306,7 @@ function selectParticipant(participantClientId, text, avatar){
     canvas.requestRenderAll();
 }
 
-function createAvatars(){
+function createAvatars(round){
     netframe.log('creating Avatar');
 
     let networkIdentities = Object.values(netframe.getNetworkIdentities());
@@ -395,7 +395,7 @@ function createAvatars(){
         subGroupArr.push(speechBubble);
 
         // + '\nP = ' + networkIdentities[i].popularityFactor + '%'
-        let text = createText('Player: ' + (networkIdentities[i].identityId + 1) + '\nT: ' + networkIdentities[i].totalScore, {x: speechOffset.x, y: speechOffset.y - 10, originX: 'center', originY: 'center'}, 'green', 20);
+        let text = createText('Player: ' + (networkIdentities[i].identityId + 1) + '\nT: ' + networkIdentities[i].scores[round], {x: speechOffset.x, y: speechOffset.y - 10, originX: 'center', originY: 'center'}, 'green', 20);
         subGroupArr.push(text);
 
         // Subgroup
@@ -510,9 +510,10 @@ function loadBubbleScene(){
 function drawRoundNumber(){
     netframe.log('drawRoundNumber() called');
     let content = 'Round ' + modelController.getGameManager().round + ' / ' + modelController.getGameManager().maxRounds;
+    /*
     if(netframe.getMyNetworkIdentity()){
         content += '\nYour total: ' + netframe.getMyNetworkIdentity().totalScore
-    }
+    }*/
     let position = {x: 50, y: 50, originX: 'left', originY: 'top'};
     let color = 'black';
     let roundText = new createText(content, position, color);

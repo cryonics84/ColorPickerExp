@@ -116,7 +116,7 @@ function cmdSelectBubble(bubbleIdGuess, moneyGroupId, clientId, mouseData){
                     for(let i in networkIdentities){
                         networkIdentities[i].selectedBubble = null;
                     }
-                    netframe.makeRPC('loadSocialScene', []);
+                    netframe.makeRPC('loadSocialScene', [round]);
 
                 }, 4000);
         }

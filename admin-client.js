@@ -86,6 +86,7 @@ const admin = createClient({
 //----------------------------
 
 let hasStarted = false;
+let maxRounds = 0;
 
 insertHTML();
 
@@ -172,7 +173,7 @@ function startGame(){
 
     let gameSettings = document.getElementById("gameSettings");
 
-    let maxRounds = gameSettings.numberOfRounds.value;
+    maxRounds = gameSettings.numberOfRounds.value;
     let gameMode = gameSettings.gameMode.value;
     let networkMode = gameSettings.networkMode.value;
 
@@ -183,8 +184,8 @@ function startGame(){
 
 }
 
-function updateRounds(number){
-    $('#roundId').text('Current round: ' + number + ' of ' + db.gameSettings.maxRounds);
+function updateRounds(roundArr){
+    $('#roundId').text('Current rounds: ' + roundArr + ' of ' + maxRounds);
 }
 
 function download(content, fileName, contentType) {

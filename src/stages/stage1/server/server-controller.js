@@ -52,7 +52,7 @@ function cmdSelectBubble(bubbleIdGuess, moneyGroupId, clientId, mouseData){
         money = -moneyGroup.value;
     }
 
-    netframe.makeRPC('playerSelectBubble', [bubbleIdGuess, colorAnswer, money, clientId, round]);
+
 
     //Save data
     netframe.log('Saving bubble data...');
@@ -72,14 +72,29 @@ function cmdSelectBubble(bubbleIdGuess, moneyGroupId, clientId, mouseData){
 
     if(!db.gameSettings.networkMode){
         //if we are in single player then we skip social scene and continue next round
+        netframe.log('Making playerSelectBubble RPC and preparing for new round...');
+        netframe.log('Params: BubbleIdGuess: ' + bubbleIdGuess);
+        netframe.log('Params: colorAnswer: ' + colorAnswer);
+        netframe.log('Params: money: ' + money);
+        netframe.log('Params: clientId: ' + clientId);
+        netframe.log('Params: round: ' + round);
+        netframe.makeRPC('playerSelectBubble', [bubbleIdGuess, colorAnswer, money, clientId, round], clientId);
+/*
+        let round = modelController.getGameManager().round[identity.identityId];
+        netframe.log('Logging Round Arr: ' + modelController.getGameManager().round);
+*/
+        //Account for index-0
+        round++;
 
-        if(modelController.getGameManager().round[identity.identityId] >= modelController.getGameManager().maxRounds) {
+        if(round >= modelController.getGameManager().maxRounds) {
+            netframe.log('Current round: ' + round + ', max rounds reached for client: ' + clientId + ', with ID: ' + identity.identityId);
             setTimeout(
                 function () {
                     gameOver(true, clientId);
                 }, 3000);
         }else{
             // Transition to new round (bubble scene)
+            netframe.log('Current round: ' + round + ', for client ' + clientId + ', with ID: ' + identity.identityId + '\nGoing to next round');
             setTimeout(
                 function() {
                     startRound(clientId);
@@ -90,6 +105,8 @@ function cmdSelectBubble(bubbleIdGuess, moneyGroupId, clientId, mouseData){
         return;
     }else{
         //If we are in multiplayer mode then we need to wait for other players and transition to social scene
+        netframe.log('Making playerSelectBubble RPC for all clients as this is multiplayer...');
+        netframe.makeRPC('playerSelectBubble', [bubbleIdGuess, colorAnswer, money, clientId, round]);
     }
 
     let allReady = true;
@@ -266,6 +283,8 @@ function startRound(clientId){
 
     //If passed clientId then only start round for that client, else for everyone
     if(!db.gameSettings.networkMode){
+        netframe.log('Single mode');
+
 
         if(clientId){
             netframe.log('Starting solo round for client: ' + clientId);
@@ -273,8 +292,10 @@ function startRound(clientId){
             let id = networkIdentity.identityId;
             modelController.getGameManager().round[id]++;
 
-            // notify clients
-            netframe.makeRPC('startRound', [id, modelController.getGameManager().round[id]]);
+            // notify client
+            netframe.makeRPC('startRound', [id, modelController.getGameManager().round[id]], clientId);
+
+            netframe.getServer().send('updateRounds', modelController.getGameManager().round).toAdmin();
         }else{
             let networkIdentities = Object.values(netframe.getNetworkIdentities());
             netframe.log('Starting solo round for all clients: ' + networkIdentities);
@@ -293,11 +314,13 @@ function startRound(clientId){
         netframe.log('Starting multi player round for all clients...');
         modelController.getGameManager().round[0] = modelController.getGameManager().round[0] + 1;
 
+
         // notify clients
         netframe.makeRPC('startRound', [0, modelController.getGameManager().round[0]]);
+        netframe.getServer().send('updateRounds', modelController.getGameManager().round[0]).toAdmin();
     }
 
-    netframe.getServer().send('updateRounds', modelController.getGameManager().round[0]).toAdmin();
+
 }
 
 function initData(){

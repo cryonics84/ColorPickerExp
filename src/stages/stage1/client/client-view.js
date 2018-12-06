@@ -224,19 +224,19 @@ function loadRewardScene(bubbleIdGuess, colorAnswer, money){
     let selectedPosition = {x: 0, y: 0};
     let selectedPie = makeBubble(-1, 0, 0, 50, selectedBubble.colors);
     let selectedText = createText('You choose:', {x: 0, y: -75, originX: 'center', originY: 'center'}, 'black');
-
+/*
     let answerPosition = {x: 200, y: 0};
     let answerPie = makeBubble(-1, 0, 0, 50, [colorAnswer]);
     let answerText = createText('Correct choice:', {x: 0, y: -75, originX: 'center', originY: 'center'}, 'black');
-
+*/
     let selectedSubGroup = createSubGroup([selectedPie, selectedText], selectedPosition);
-    let answerSubGroup = createSubGroup([answerPie, answerText], answerPosition);
+  //  let answerSubGroup = createSubGroup([answerPie, answerText], answerPosition);
 
     netframe.log('Created selectedSubGroup: ' + JSON.stringify(selectedSubGroup));
-    netframe.log('Created answerSubGroup: ' + JSON.stringify(answerSubGroup));
+    //netframe.log('Created answerSubGroup: ' + JSON.stringify(answerSubGroup));
 
     netframe.log('Creating group...');
-    let group = createGroup([selectedSubGroup, answerSubGroup]);
+    let group = createGroup([selectedSubGroup]);
     netframe.log('Created group: ' + JSON.stringify(group));
     canvas.add(group);
 
@@ -261,7 +261,8 @@ function loadSocialScene(round){
     currentState = State.Avatar;
     canvas.clear();
     createAvatars(round);
-    enableTracking();
+    //enableTracking();
+    mouseData.length  = 0;
     netframe.getMyNetworkIdentity().selectedPartipants = [];
 
 
@@ -494,7 +495,8 @@ function startCountDown(callback){
 
 function startRound(round){
     canvas.clear();
-    currentRound = round;
+    netframe.log('Setting current round: ' + round);
+    currentRound = Number(round);
     createGUI();
     //startCountDown(loadBubbleScene);
     setReadyTextVisibility(true);
@@ -550,11 +552,11 @@ function loadFinalScene(score){
     let totalScoreText = createText(scoreText, position2, color2, 70);
     addToCanvas(totalScoreText);
 
-    let contentLink = 'Now please complete the survey by clicking on this text.';
+    let contentLink = 'Now please complete the survey\nby clicking on this text.';
 
     let positionLink = {x: centerPoint.x, y: centerPoint.y + 100, originX: 'center', originY: 'center'};
-    let colorLink = 'black';
-    let urlText = createText(contentLink, positionLink, colorLink, 30);
+    let colorLink = 'green';
+    let urlText = createText(contentLink, positionLink, colorLink, 35);
 
     urlText.on("mousedown", function (options) {
         netframe.log('Redirecting to survey...');

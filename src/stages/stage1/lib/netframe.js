@@ -187,7 +187,7 @@ function clientConnected(client){
 }
 
 function clientDisconnected(clientId){
-    log('[NetFrame] clientDisconnected() called with client: ' + client);
+    log('[NetFrame] clientDisconnected() called with client: ' + clientId);
 
 
     //remove client owned assets
@@ -632,8 +632,26 @@ function RpcRemoveEntities(entitiesId){
 
 }
 function RpcRemoveNetworkIdentity(clientId){
-    let networkIdentityIndex = Object.values(networkIdentities).findIndex(obj => obj.clientId === clientId);
-    let networkIdentity = networkIdentities[networkIdentityIndex];
+    log('RpcRemoveNetworkIdentity called with clientId: ' + clientId);
+    //let networkIdentityIndex = Object.values(networkIdentities).findIndex(obj => obj.clientId === clientId);
+    //let networkIdentity = networkIdentities[networkIdentityIndex];
+
+    let networkIdentity = null;
+    let networkIdentityIndex = -1;
+
+    for (const [key, value] of Object.entries(networkIdentities)) {
+        if(value.clientId == clientId){
+            log('Found NetworkIdentity! ');
+            networkIdentityIndex = key;
+            networkIdentity = value;
+        }
+    }
+
+    if(networkIdentityIndex === -1){
+        log('Identity not found...!');
+        return;
+    }
+
     log('Removing network identity: ' + JSON.stringify(networkIdentity));
     //networkIdentities.splice(networkIdentityIndex, 1);
     // we don't want to pop the element, as we are threating the array as a map

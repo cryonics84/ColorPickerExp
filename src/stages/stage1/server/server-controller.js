@@ -281,6 +281,10 @@ function clientConnected(client, networkIdentity){
 function startRound(clientId){
     netframe.log('Starting round...');
 
+
+    saveToDisk(JSON.stringify(gameData));
+    saveToDiskParticipants(JSON.stringify(db.participants));
+
     //If passed clientId then only start round for that client, else for everyone
     if(!db.gameSettings.networkMode){
         netframe.log('Single mode');
@@ -574,7 +578,15 @@ function getRandomInt(min, max) {
 function saveToDisk(gameDataJSON){
     netframe.log('Saving JSON data to file...');
 
-    fs.writeFile('myTestFile.json', gameDataJSON, 'utf8', finishedSaving);
+    fs.writeFile('gameData.json', gameDataJSON, 'utf8', finishedSaving);
+
+    //netframe.getServer().send('resJSON', gameDataJSON).toAdmin();
+}
+
+function saveToDiskParticipants(participantDataJSON){
+    netframe.log('Saving JSON data to file...');
+
+    fs.writeFile('participantData.json', participantDataJSON, 'utf8', finishedSaving);
 
     //netframe.getServer().send('resJSON', gameDataJSON).toAdmin();
 }
@@ -586,7 +598,7 @@ function sendParticipantData(){
 
 function sendGameData(){
     netframe.log('sendGameData() called on servercontroller...');
-    fs.readFile('myTestFile.json', function read(err, data) {
+    fs.readFile('gameData.json', function read(err, data) {
         if (err) {
             netframe.log('Error!!');
             throw err;
@@ -663,6 +675,7 @@ function gameOver(isFinished, clientId){
 
     if(isFinished){
         saveToDisk(JSON.stringify(gameData));
+        saveToDiskParticipants(JSON.stringify(db.participants));
     }
 
 }

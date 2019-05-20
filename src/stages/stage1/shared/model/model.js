@@ -11,7 +11,7 @@ import compose from "lodash/fp/compose"
 //import mix, {Entity} from './classMixer';
 
 import modelController from '../controller/controller';
-import {Entity, NetworkIdentity} from "../../lib/entity";
+import {NetworkIdentity} from "../../lib/entity";
 import {Mixin, mix} from "../../lib/mixwith";
 import  {sharedInterface as netframe} from '../../lib/netframe'
 import view from "../../client/client-view";
@@ -38,10 +38,8 @@ class Bubble {
     }
 }
 
-class GameManager extends Entity{
-    constructor(entityId){
-        super(entityId, null);
-
+class GameManager {
+    constructor(){
         this.GAMESTATES = { WAITING: 0, PLAYING: 1, GAME_OVER: 2};
         this.COLORS = { RED: 0, GREEN: 1, BLUE: 2, YELLOW: 3, PURPLE: 4, ORANGE: 5};
 
@@ -64,6 +62,7 @@ class GameManager extends Entity{
         //if(callbacks) callbacks.createGameManagerView();
     }
 }
+
 
 
 const IModel = {

@@ -493,7 +493,7 @@ function startCountDown(callback){
     }, 1000);
 }
 
-function startRound(round){
+function startRound(round, bubbleGroup){
     canvas.clear();
     netframe.log('Setting current round: ' + round);
     currentRound = Number(round);
@@ -598,6 +598,16 @@ function updateGUI(){
     render();
 }
 
+function addHint(hintText){
+    netframe.log('addHint() called in view with content : ' + hintText);
+
+    let position = {x: centerPoint.x, y: 100, originX: 'center', originY: 'center'};
+    let color = 'black';
+    let hintTextObj = createText(hintText, position, color, 35);
+
+    addToCanvas(hintTextObj);
+}
+
 function createText(content, position, color, fontSize = 14){
     netframe.log('createText() called in view with content : ' + content + ', position:' + JSON.stringify(position) + ', color: ' + color);
     let text = new fabric.IText(content, {
@@ -652,6 +662,7 @@ function render(){
 }
 
 function reset() {
+    netframe.log('reset() called on client view');
     entityViewMap = new Map();
 
     currentRound = 0;
@@ -997,10 +1008,11 @@ function drawPie(id, left, top, r, colors) {
 
 function clickedBubble(id){
     netframe.log('A bubble was clicked with ID: ' + id);
-    let bubble = modelController.getCardGroupById(id);
+    //let bubble = modelController.getCardGroupById(id);
     netframe.log('Sending cmdSelectBubble to server with mouseData: ' + JSON.stringify(mouseData));
-    clientController.cmdSelectBubble(bubble, mouseData);
     disableTracking();
+    clientController.cmdSelectBubble(id, mouseData);
+    
 }
 
 const Iview = {
@@ -1017,7 +1029,8 @@ const Iview = {
     loadBubbleScene: loadBubbleScene,
     loadLobby: loadLobby,
     startRound: startRound,
-    loadFinalScene: loadFinalScene
+    loadFinalScene: loadFinalScene,
+    addHint: addHint
 };
 
 export default Iview;

@@ -36,6 +36,8 @@ let commands = {
     },
 }
 
+//localhost:8080/admin?key=sEcr3t
+
 const monsterr = createServer({
   network: Network.pairs(16),
   events,

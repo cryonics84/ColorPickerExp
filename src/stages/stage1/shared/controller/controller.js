@@ -11,7 +11,7 @@ let gameManager;
 let networkIdentityColors = ['red', 'yellow', 'white', 'pink', 'cyan', 'orange'];
 
 //---------------------------------------------------------------
-// entity functions
+//  functions
 //---------------------------------------------------------------
 
 function createBubble(id, moneyGroupId){
@@ -87,17 +87,11 @@ function loadFinalScene(score){
     netframe.log('loadFinalScene() called on modelController');
 }
 
-function moveEntity(entityId, direction){
-    netframe.log('moveEntity called() on model Controller');
-    let entity = netframe.getEntity(entityId);
-    entity.move(direction);
-}
 
-function createGameManager(entityId){
-    netframe.log('creating game manager: ' + entityId);
-    gameManager = new model.GameManager(entityId);
+function createGameManager(){
+    netframe.log('creating game manager: ');
+    gameManager = new model.GameManager();
     netframe.log('created : ' + JSON.stringify(gameManager));
-    netframe.updateEntity(gameManager.id, gameManager);
 
     return gameManager;
 }
@@ -165,21 +159,14 @@ function setGameManager(instance){
 //---------------------------------------------------------------
 
 function init(){
-    netframe.addRemoveEntityCallback(removeEntityCallback);
     netframe.addEndStageCallback(endStageCallback);
 
     gameManager = new model.GameManager();
 }
 
-function removeEntityCallback(entity){
-    netframe.log('removeEntityCallback() called on modelController with entity id: ' + entity.id);
-    if(entity instanceof model.Card){
-        gameManager.removePlayer(entity.id);
-    }
-}
 
 function endStageCallback(){
-    netframe.removeRemoveEntityCallback(removeEntityCallback);
+    
 }
 
 //---------------------------------------------------------------
@@ -188,7 +175,6 @@ function endStageCallback(){
 
 export default {
     init: init,
-    moveEntity: moveEntity,
     getNetworkIdentityColors: getNetworkIdentityColors,
     createGameManager: createGameManager,
     getGameManager: getGameManager,

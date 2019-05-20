@@ -14,23 +14,20 @@ const rpcs = {
     loadLobby: loadLobby,
     loadSocialScene: loadSocialScene,
     loadFinalScene: loadFinalScene,
-    reset: reset
+    reset: reset,
+    addHint: addHint
 };
 
 //---------------------------------------------------------------
 // Core functions
 //---------------------------------------------------------------
 function init(client){
-    //we need to add the remove entity callback to the model controller before the view
-
-
 
     netframe.init(client);
     modelController.init();
 
     netframe.shouldLog(true);
-    netframe.addCreateEntityCallback(createEntity);
-    netframe.addRemoveEntityCallback(removeEntity);
+
     netframe.addClientConnectedCallback(clientConnected);
     netframe.addClientDisconnectedCallback(clientDisconnected);
     netframe.addEndStageCallback(endStage);
@@ -43,33 +40,10 @@ function init(client){
 function endStage(){
     netframe.log('endStage() called..');
     view.reset();
-    netframe.removeCreateEntityCallback(createEntity);
-    netframe.removeRemoveEntityCallback(removeEntity);
     netframe.removeEndStageCallback(endStage);
     netframe.reset();
 }
 
-function createEntity(entity){
-    netframe.log('createEntity was called on client-controller with entity: ' + JSON.stringify(entity));
-
-    switch (netframe.getClassNameOfEntity(entity)) {
-
-        case 'GameManager':
-            netframe.log('Entity is GameManager');
-            modelController.setGameManager(entity);
-            break;
-        default:
-            netframe.log('Entity is UNKNOWN Class');
-            break;
-    }
-
-    entity.spawnView();
-}
-
-function removeEntity(entity){
-    netframe.log('removeEntity() called on client-controller with entity id: ' + entity.id);
-    entity.removeView();
-}
 
 function clientConnected(){
     netframe.log('clientConnected called on client-controller');
@@ -115,13 +89,17 @@ function reset(){
     view.reset();
 }
 
+function addHint(hint){
+    netframe.log('addHint() called on clientController');
+    view.addHint("test");
+}
 
 //---------------------------------------------------------------
 // Commands
 //---------------------------------------------------------------
-function cmdSelectBubble(bubble, mouseData){
-    netframe.log('You selected bubble id: ' + bubble.id);
-    netframe.makeCmd('cmdSelectBubble', [bubble.id, bubble.moneyGroupId, netframe.getClientId(), mouseData]);
+function cmdSelectBubble(bubbleId, mouseData){
+    netframe.log('You selected bubble id: ' + bubbleId);
+    netframe.makeCmd('cmdSelectBubble', [bubbleId, netframe.getClientId(), mouseData]);
 }
 
 function cmdSelectParticipant(selectedParticipants, mouseData){

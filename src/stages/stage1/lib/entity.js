@@ -9,29 +9,14 @@ export function makePrivVar(obj, name){
     });
 }
 
-// Base class that all entities inherit from
-export class Entity {
-    constructor(entityId, owner){
-        this.id = entityId;
-        this.owner = owner;
-    }
-
-    spawnView(){
-        netframe.log('spawnView called in super');
-    }
-
-    removeView(){
-        netframe.log('removeView called in super');
-    }
-}
-
 export class NetworkIdentity {
+
     constructor(identityId, clientId, name, color){
         this.identityId = identityId;
         this.clientId = clientId;
         this.name = name;
         this.color = color;
-        this.state = NetworkStates.JOINED;
+        this.state = NetworkStates.LOBBY;
 
         this.selectedBubble = null;
 
@@ -43,18 +28,40 @@ export class NetworkIdentity {
         this.lastScore = 0;
         this.scores = [];
         this.isReady = false;
+        
     }
 }
 
-// JOINED => LOADING
-// LOADING => WAITING || PLAYING
-// PLAYING => DISCONNECTED || FINISHED
-// DISCONNECTED => JOINED
-export const NetworkStates = { JOINED: 0, LOADING: 1, WAITING: 2, PLAYING: 3, DISCONNECTED: 4, FINISHED: 5};
+
+export class Session
+{
+    constructor(sessionId, clients, sessionData){
+        // Unique key
+        this.sessionId = sessionId;
+
+        // Client IDs array for this session
+        this.clients = clients;
+
+        this.sessionData = sessionData;
+    }
+}
+
+export const NetworkStates = { LOBBY: 0, BUBBLE: 1, REWARD: 2, CERTAINTY: 3, SOCIAL: 4, FINISHED: 5};
+
+export class RewardState {
+    constructor(score){
+        this.score = score;
+    }
+}
+
+export class FinishedState {
+    constructor(score){
+        this.score = score;
+    }
+}
 
 /*
 const IEntity = {
-    Entity: Entity,
     NetworkIdentity: NetworkIdentity,
     makePrivVar: makePrivVar
 };

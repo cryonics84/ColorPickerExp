@@ -8,6 +8,8 @@ import view from '../../client/client-view';
 
 let callbacks;
 
+
+
 function setCallbackMap(callbackMap){
 	callbacks = callbackMap;
 }
@@ -48,6 +50,7 @@ class GameManager {
 		this.finalScore = 0;
 	}
 }
+
 
 const IModel = {
 	Bubble: Bubble,

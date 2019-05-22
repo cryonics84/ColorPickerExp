@@ -8,14 +8,16 @@ import * as monsterr from "monsterr";
 // Variables
 //---------------------------------------------------------------
 
+const NetworkStates = { LOBBY: 0, BUBBLE: 1, REWARD: 2, CERTAINTY: 3, SOCIAL: 4, FINISHED: 5, READYBUBBLE: 6};
+
 const rpcs = {
     playerSelectBubble: playerSelectBubble,
-    startRound: startRound,
     loadLobby: loadLobby,
     loadSocialScene: loadSocialScene,
     loadFinalScene: loadFinalScene,
     reset: reset,
-    addHint: addHint
+    addHint: addHint,
+    updateState: updateState
 };
 
 //---------------------------------------------------------------
@@ -28,12 +30,13 @@ function init(client){
 
     netframe.shouldLog(true);
 
-    netframe.addClientConnectedCallback(clientConnected);
-    netframe.addClientDisconnectedCallback(clientDisconnected);
+    //netframe.addClientConnectedCallback(clientConnected);
+    //netframe.addClientDisconnectedCallback(clientDisconnected);
     netframe.addEndStageCallback(endStage);
     view.init();
 
-    loadLobby();
+    //loadLobby();
+    //cmdRequestState();
 }
 
 
@@ -47,32 +50,88 @@ function endStage(){
 
 function clientConnected(){
     netframe.log('clientConnected called on client-controller');
-    view.updateGUI();
+    //view.updateGUI();
 }
 
 function clientDisconnected(){
     netframe.log('clientDisconnected called on client-controller');
-    view.updateGUI();
+    //view.updateGUI();
 }
 
 //---------------------------------------------------------------
 // client functions
 //---------------------------------------------------------------
 
+
+function updateState(stateObj){
+    netframe.log('updateState() was called with state: ' + stateObj['state']);
+
+	switch (stateObj.state){
+	case NetworkStates.LOBBY:
+        setLobbyState(stateObj.stateData);
+		break;
+	case NetworkStates.BUBBLE:
+		setBubbleState(stateObj.stateData);
+		break;
+	case NetworkStates.REWARD:
+        setBubbleState(stateObj.stateData);
+		break;
+	case NetworkStates.CERTAINTY:
+        setBubbleState(stateObj.stateData);
+		break;
+	case NetworkStates.SOCIAL:
+        setBubbleState(stateObj.stateData);
+		break;
+	case NetworkStates.FINISHED:
+        setBubbleState(stateObj.stateData);
+		break;
+	case NetworkStates.READYBUBBLE:
+		setBubbleState(stateObj.stateData);
+	}
+
+}
+
+function setLobbyState(stateData){
+    netframe.log('setLobbyState() was called');
+    view.loadLobby(stateData.round, stateData.maxRounds, stateData.numberOfPlayers, stateData.maxPlayers);
+}
+
+function setBubbleState(stateData){
+    netframe.log('setBubbleState() was called');
+	view.startRound(stateData.moneyGroups, stateData.round, stateData.maxRounds);
+}
+
+function setCertaincyState(){
+}
+
+function setSocialState(){
+}
+
+function setRewardState(){
+}
+
+function setFinishedState(){
+}
+
+function setReadyBubbleState(){
+	view.startRound(currentRound);
+}
+
+
 function playerSelectBubble(bubbleIdGuess, colorAnswer, money, clientId){
     if(clientId === netframe.getClientId()){
         view.loadRewardScene(bubbleIdGuess, colorAnswer, money);
     }
 }
-
-function startRound(roundIndex, currentRound){
+/*
+function startRound(currentRound){
     netframe.log('startRound() called in clientController');
     view.startRound(currentRound);
 }
-
+*/
 function loadLobby(){
     netframe.log('loadLobby() called on clientController');
-    view.loadLobby();
+    view.loadLobby(round, maxRound);
 }
 
 function loadSocialScene(){
@@ -111,6 +170,11 @@ function cmdSelectParticipant(selectedParticipants, mouseData){
 function cmdFinishedGame(canvasSize){
     netframe.log('cmdFinishedGame() called with canvasSize: ' + canvasSize);
     netframe.makeCmd('cmdFinishedGame', [canvasSize, netframe.getClientId()]);
+}
+
+
+function cmdRequestState(){
+    netframe.makeCmd('cmdRequestState', [netframe.getClientId()]);
 }
 
 //---------------------------------------------------------------

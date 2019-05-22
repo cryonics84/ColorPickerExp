@@ -14,9 +14,13 @@ let options = {
 let events = {}
 let commands = {}
 
-createClient({
+let client = createClient({
   events,
   commands,
   options,
   stages
 })
+
+
+let chat = client.getChat();
+chat.hide();

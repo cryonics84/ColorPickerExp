@@ -29,6 +29,9 @@ let State = {Waiting: 0, Lobby: 1, Bubble: 2, Reward: 3, Avatar: 4, End: 5};
 let currentState = State.Waiting;
 */
 
+let selectedNetworkIdentities = [];
+let finishedSelectingParticipants = false;
+
 let canvasSize;
 
 function init(){
@@ -66,6 +69,7 @@ let readyCircle;
 let readyText;
 
 function scaleCanvas(){
+    netframe.log('scaleCanvas() called');
     var factorX = canvas.getWidth() / canvasSize.x;
     var factorY = canvas.getHeight() / canvasSize.y;
 
@@ -73,6 +77,7 @@ function scaleCanvas(){
 }
 
 function _zoomCanvas(factorX, factorY) {
+    netframe.log('_zoomCanvas() called');
     //canvas.setHeight(canvas.getHeight() * factorY);
     //canvas.setWidth(canvas.getWidth() * factorX);
 
@@ -87,9 +92,10 @@ function _zoomCanvas(factorX, factorY) {
     var objects = canvas.getObjects();
     
     var tcounter = 0;
-    
+
     for (var i in objects) {
         
+
         netframe.log('Scaling object: ' + JSON.stringify(objects[i]));
 
         tcounter++;
@@ -105,13 +111,12 @@ function _zoomCanvas(factorX, factorY) {
         var tempLeft = left * factorX;
         var tempTop = top * factorY;
     
-        /*
-        objects[i].scaleX = tempScaleX;
-        objects[i].scaleY = tempScaleY;
-        objects[i].left = tempLeft;
-        objects[i].top = tempTop;
-    */
-
+        
+        //objects[i].scaleX = tempScaleX;
+        //objects[i].scaleY = tempScaleY;
+        //objects[i].left = tempLeft;
+        //objects[i].top = tempTop;
+    
         objects[i].set('scaleX', tempScaleX);
         objects[i].set('scaleY', tempScaleY);
         objects[i].set('left', tempLeft);
@@ -125,17 +130,17 @@ function _zoomCanvas(factorX, factorY) {
     canvas.calcOffset();
 }
 
-function setReadyTextVisibility(isVisible, btnCallback){
+function setReadyTextVisibility(isVisible, btnCallback, content, posX, posY){
     netframe.log('Setting ready group visibility: ' + isVisible);
     if(isVisible){
-        let readyText = createText('Click center circle to begin...', {x: centerPoint.x, y: centerPoint.y -50, originX: 'center',
+        let readyText = createText(content, {x: posX, y: posY -50, originX: 'center',
             originY: 'center'}, 'black', 50);
         let circleRadius = 10;
 
         //let readyCircle = createBandView(-1, centerPoint.x, centerPoint.y,circleRadius,1,'white','black');
 
         let circle = {
-            left: centerPoint.x, top: centerPoint.y,
+            left: posX, top: posY,
             originX: 'center' , originY: 'center',
             fill: 'green',
             radius: 10,
@@ -175,13 +180,20 @@ function setReadyTextVisibility(isVisible, btnCallback){
 
 }
 
-
+let hasNewWindowChangeCounter = 0;
 function setupWindowChange(){
     window.onresize = function(event) {
         netframe.log('Window resize...');
+
+        hasNewWindowChangeCounter ++;
+
         setTimeout(
             function() {
-                calculateSizes();
+                if(hasNewWindowChangeCounter === 1){
+                    calculateSizes();
+                }
+                hasNewWindowChangeCounter --;
+                
             }, 1000);
 
     };
@@ -269,14 +281,13 @@ function saveScene(sceneData){
      sceneData = JSON.stringify(canvas);
 }
 */
-function loadRewardScene(bubbleIdGuess, colorAnswer, money){
+function loadRewardScene(selectedBubble, money){
     netframe.log('Loading reward scene...');
     //currentState = State.Reward;
     canvas.clear();
     mouseData.length = 0;
 
-    let selectedBubble = netframe.getMyNetworkIdentity().selectedBubble;
-    //netframe.log('showing selected bubble: ' + JSON.stringify(selectedBubble));
+    netframe.log('showing selected bubble: ' + JSON.stringify(selectedBubble));
 
     let selectedPosition = {x: 0, y: 0};
     let selectedPie = makeBubble(-1, 0, 0, 50, selectedBubble.colors);
@@ -306,22 +317,33 @@ function loadRewardScene(bubbleIdGuess, colorAnswer, money){
     let moneyText = createText(moneyContent, {x: centerPoint.x, y: centerPoint.y + 200, originX: 'center', originY: 'center'}, 'black', 45);
     addToCanvas(moneyText);
 
-    drawRoundNumber();
+    //drawRoundNumber();
+
+    setReadyTextVisibility(true, 
+        function(){return continueFromRewardScene()},
+        'Click center circle to continue...',
+        centerPoint.x, centerPoint.y
+        );
+
 
 /*
     setTimeout(loadSocialScene, 5000);
     */
 }
 
+function continueFromRewardScene(){
+    netframe.makeCmd('cmdContinueFromRewardScene', [netframe.getClientId()]);
+}
 
-function loadSocialScene(round){
+function loadSocialScene(networkIdentities){
     //currentState = State.Avatar;
     canvas.clear();
-    createAvatars(round);
+    selectedNetworkIdentities = [];
+    finishedSelectingParticipants = false;
+    createAvatars(networkIdentities);
     //enableTracking();
     mouseData.length  = 0;
-    netframe.getMyNetworkIdentity().selectedPartipants = [];
-
+    //netframe.getMyNetworkIdentity().selectedPartipants = [];
 
     readyText = createText('Click here when you are ready.', {x: centerPoint.x, y: canvas.height * 0.95, originX: 'center', originY: 'center'}, 'red', 30);
     readyText.on("mousedown", function (options) {
@@ -336,28 +358,34 @@ function loadSocialScene(round){
 
 function clickedReady(){
     netframe.log('clickedReady() called on view');
-    if(netframe.getMyNetworkIdentity().isReady){
+    if(finishedSelectingParticipants){
         netframe.log('Already clicked ready..');
         return;
     }
-    clientController.cmdSelectParticipant(netframe.getMyNetworkIdentity().selectedPartipants, mouseData);
-    netframe.getMyNetworkIdentity().isReady = true;
+    clientController.cmdSelectParticipant(selectedNetworkIdentities, mouseData);
+    finishedSelectingParticipants = true;
     readyText.set('text', 'Waiting for others...');
     disableTracking();
 }
 
-function selectParticipant(participantClientId, text, avatar){
-    netframe.log('Clicked avatar #' + participantClientId);
-    if(netframe.getMyNetworkIdentity().selectedPartipants.includes(participantClientId)) {
+
+function selectParticipant(networkIdentities, selectedIndex, text, avatar){
+    netframe.log('Clicked avatar #' + selectedIndex);
+
+    let selectedNetworkIdentity = networkIdentities[selectedIndex];
+
+    netframe.log('selectedNetworkIdentity: ' + JSON.stringify(selectedNetworkIdentity));
+
+    if(selectedNetworkIdentities.includes(selectedNetworkIdentity)) {
         return;
     }
     let content = text.get('text');
-    let lastBubbleColors = netframe.getNetworkIdentityFromClientId(participantClientId).selectedBubble.colors;
+    let lastBubbleColors = selectedNetworkIdentity.selectedBubble.colors;
     let colorsShortened = lastBubbleColors.map(color => color.charAt(0));
     if(lastBubbleColors){
         text.set('text', content + '\n' + colorsShortened);
     }
-    netframe.getMyNetworkIdentity().selectedPartipants.push(participantClientId);
+    selectedNetworkIdentities.push(selectedNetworkIdentity);
 
     //avatar.filters[0].rotation = 2 * Math.random() - 1;
     avatar.filters.push(new fabric.Image.filters.Grayscale());
@@ -365,10 +393,10 @@ function selectParticipant(participantClientId, text, avatar){
     canvas.requestRenderAll();
 }
 
-function createAvatars(round){
+function createAvatars(networkIdentities){
     netframe.log('creating Avatar');
 
-    let networkIdentities = Object.values(netframe.getNetworkIdentities());
+    //let networkIdentities = Object.values(netframe.getNetworkIdentities());
     //netframe.log('Got network identities: ' + JSON.stringify(networkIdentities));
 
     let gridCount = Math.ceil(Math.sqrt(networkIdentities.length));
@@ -398,12 +426,11 @@ function createAvatars(round){
 
     let speechBubbles = [];
 
-    let myIndex = netframe.getMyNetworkIdentity().identityId;
 
     let avatarPositionCounter = 0;
     for(let index in networkIdentities){
         let i = Number(index);
-        if(networkIdentities[i].identityId === myIndex){
+        if(networkIdentities[i].clientId === netframe.getClientId()){
             //skip so we don't show own avatar
             continue;
         }
@@ -413,7 +440,7 @@ function createAvatars(round){
 
         //let avatarPos = getAvatarPosition(avatarPositionCounter);
         let x = i % gridCount;
-        //let y = ((i-x) / gridCount);
+        let y = ((i-x) / gridCount);
         netframe.log('Getting position of X: ' + x + ', Y: ' + y + ', in grid' );
         let avatarPos = grid[x][y];
 
@@ -463,7 +490,7 @@ function createAvatars(round){
         netframe.log('--- Created Subgroup:\n' + JSON.stringify(subGroup));
 
         subGroup.on("mousedown", function (options) {
-            selectParticipant(networkIdentities[i].clientId, text, emoji);
+            selectParticipant(networkIdentities, i, text, emoji);
         });
     }
 
@@ -555,7 +582,11 @@ function startRound(moneyGroups, round, maxRounds){
     this.moneyGroups = moneyGroups;
     canvas.clear();
     createGUI();
-    setReadyTextVisibility(true, loadBubbleScene(moneyGroups, round, maxRounds));
+    setReadyTextVisibility(true, 
+        function(){return loadBubbleScene(moneyGroups, round, maxRounds)},
+        'Click center circle to begin...',
+        centerPoint.x, centerPoint.y
+        );
 }
 
 function loadBubbleScene(moneyGroups, round, maxRounds){
@@ -706,13 +737,11 @@ function reset() {
 }
 
 function calculateSizes(){
+    netframe.log('calculateSizes () called');
 
     if(canvasSize){
         scaleCanvas();
     }
-
-    netframe.log('calculateSizes () called');
-    canvas.clear();
 
     centerPoint.x = canvas.getWidth() / 2;
     centerPoint.y = canvas.getHeight() / 2;
@@ -1059,7 +1088,7 @@ const Iview = {
     createGUI: createGUI,
     updateGUI: updateGUI,
     createCardSet: createCardSet,
-    loadAvatarScene: loadSocialScene,
+    loadSocialScene: loadSocialScene,
     loadRewardScene: loadRewardScene,
     loadBubbleScene: loadBubbleScene,
     loadLobby: loadLobby,

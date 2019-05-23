@@ -57,22 +57,35 @@ function playerSelectBubble(bubbleIdGuess, colorAnswer, money, clientId, round){
 
 }
 
-function selectedParticipant(clientId, round, selectedParticipantsId){
+function selectedParticipant(networkIdentity, round, selectedParticipants){
     netframe.log('selectedParticipant() called on modelController');
 
-    let identity = netframe.getNetworkIdentityFromClientId(clientId);
-    identity.isReady = true;
-    identity.selectedPartipants = selectedParticipantsId;
+    netframe.log('networkIdentity: ' + JSON.stringify(networkIdentity));
+    netframe.log('round: ' + round);
+    netframe.log('networkIdentity.selectedParticipants: ' + JSON.stringify(networkIdentity['selectedParticipants']));
 
-    netframe.getNetworkIdentityFromClientId(clientId).totalScore -= 50 * selectedParticipantsId.length;
-    // TODO(dan): Check that this correctly subtracts points for clicking other participants
-    identity.scores[round] -= 50 * selectedParticipantsId.length;
+    netframe.log('selectedParticipants[round]: ' + JSON.stringify(selectedParticipants));
+    networkIdentity['selectedParticipants'][round] = selectedParticipants;
+    netframe.log('totalScore: ' + JSON.stringify(networkIdentity.totalScore));
+    networkIdentity.totalScore -= 50 * selectedParticipants.length;
+    netframe.log('scores[round]: ' + JSON.stringify(networkIdentity.scores[round]));
+    networkIdentity.scores[round] -= 50 * selectedParticipants.length;
+    
+}
 
-    for(let i in selectedParticipantsId){
-        //netframe.getNetworkIdentityFromClientId(selectedParticipantsId[i]).popularityFactor++;
+function hasEveryoneFinishedSocial(round){
+    
+    let allReady = true;
+	netframe.log('Checking if all participants are ready...');
+	let networkIdentities = netframe.getNetworkIdentities();
+	for(let i in networkIdentities){
+		if(!networkIdentities[i].selectedParticipants[round]){
+			allReady = false;
+			break;
+		}
+	}
 
-    }
-
+    return allReady;
 }
 
 function loadLobby(){
@@ -132,7 +145,7 @@ function getCardGroupById(id){
     return null;
 }
 
-function setNumberOfPlayers(amount){
+function setMaxPlayers(amount){
     netframe.log('setNumberOfPlayers() called on modelController with: ' + Number(amount));
     gameManager.numberOfPlayers = Number(amount);
 }
@@ -189,7 +202,8 @@ export default {
     loadSocialScene: loadSocialScene,
     selectedParticipant: selectedParticipant,
     reset: reset,
-    setNumberOfPlayers: setNumberOfPlayers,
+    setMaxPlayers: setMaxPlayers,
     setNumberOfRounds: setNumberOfRounds,
-    loadFinalScene: loadFinalScene
+    loadFinalScene: loadFinalScene,
+    hasEveryoneFinishedSocial: hasEveryoneFinishedSocial
 };

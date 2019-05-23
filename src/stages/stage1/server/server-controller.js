@@ -23,6 +23,7 @@ let gameData;
 function cmdSelectBubble (bubbleIdGuess, clientId, mouseData) {
 	netframe.log('called cmdSelectBubble() on server with bubble id: ' + bubbleIdGuess + ', and networkIdentity: ' + clientId);
 
+	let identity = netframe.getNetworkIdentityFromClientId(clientId);
 	let playerIndex;
 
 	if(!db.gameSettings.networkMode){
@@ -32,15 +33,19 @@ function cmdSelectBubble (bubbleIdGuess, clientId, mouseData) {
 	}
 
 	let bubble = modelController.getCardGroupById(bubbleIdGuess);
-	let moneyGroupId = bubble.moneyGroup;
-	let round = modelController.getGameManager().round[playerIndex]-1;
-	let colorAnswer = answers[round];
-	let moneyGroup = modelController.getGameManager().moneyGroups[moneyGroupId - 1];
-	let identity = netframe.getNetworkIdentityFromClientId(clientId);
-
-	netframe.log('Found colorAnswer: ' + colorAnswer);
-	netframe.log('Found moneyGroup: ' + JSON.stringify(moneyGroup));
 	netframe.log('Found bubble: ' + JSON.stringify(bubble));
+
+	let moneyGroupId = bubble.moneyGroupId;
+	netframe.log('moneyGroupId: ' + moneyGroupId);
+
+	let moneyGroup = modelController.getGameManager().moneyGroups[moneyGroupId - 1];
+	netframe.log('Found moneyGroup: ' + JSON.stringify(moneyGroup));
+	
+	let round = modelController.getGameManager().round[playerIndex]-1;
+	netframe.log('Found round: ' + round);
+
+	let colorAnswer = answers[round];
+	netframe.log('Found colorAnswer: ' + colorAnswer);
 
 	let money = 0;
 	//did user guess correct?
@@ -51,6 +56,10 @@ function cmdSelectBubble (bubbleIdGuess, clientId, mouseData) {
 		netframe.log('User guessed wrong!');
 		money = -moneyGroup.value;
 	}
+
+	identity.scores[round] = money;
+	identity.lastScore = money;
+	identity.selectedBubble = bubble;
 
 	//Save data
 	netframe.log('Saving bubble data...');
@@ -66,128 +75,114 @@ function cmdSelectBubble (bubbleIdGuess, clientId, mouseData) {
 
 	netframe.log('Saved game data: ' + JSON.stringify(gameData));
 
-
-	if(!db.gameSettings.networkMode){
-		//if we are in single player then we skip social scene and continue next round
-		netframe.log('Making playerSelectBubble RPC and preparing for new round...');
-		netframe.log('Params: BubbleIdGuess: ' + bubbleIdGuess);
-		netframe.log('Params: colorAnswer: ' + colorAnswer);
-		netframe.log('Params: money: ' + money);
-		netframe.log('Params: clientId: ' + clientId);
-		netframe.log('Params: round: ' + round);
-		
-		let stateData = {
-			'bubbleIdGuess' : bubbleIdGuess,
-			'colorAnswer' : colorAnswer,
-			'money' : money,
-			'clientId' : clientId,
-			'round' : round
-		}
-		setStateOfNetworkIdentity(identity, NetworkStates.REWARD, stateData);
-
-		//netframe.makeRPC('playerSelectBubble', [bubbleIdGuess, colorAnswer, money, clientId, round], clientId);
-		
-		/*
-        let round = modelController.getGameManager().round[identity.identityId];
-        netframe.log('Logging Round Arr: ' + modelController.getGameManager().round);
-*/
-		//Account for index-0
-		round++;
-
-		if(round >= modelController.getGameManager().maxRounds) {
-			netframe.log('Current round: ' + round + ', max rounds reached for client: ' + clientId + ', with ID: ' + identity.identityId);
-			setTimeout(
-				function () {
-					gameOver(true, clientId);
-				}, 3000);
-		}else{
-			// Transition to new round (bubble scene)
-			netframe.log('Current round: ' + round + ', for client ' + clientId + ', with ID: ' + identity.identityId + '\nGoing to next round');
-			setTimeout(
-				function() {
-					startRound(clientId);
-
-				}, 4000);
-		}
-
-		return;
-	}else{
-		//If we are in multiplayer mode then we need to wait for other players and transition to social scene
-		netframe.log('Making playerSelectBubble RPC for all clients as this is multiplayer...');
-		
-		let stateData = {
-			'bubbleIdGuess' : bubbleIdGuess,
-			'colorAnswer' : colorAnswer,
-			'money' : money,
-			'clientId' : clientId,
-			'round' : round
-		}
-		setStateOfNetworkIdentity(identity, NetworkStates.REWARD, stateData);
-		//netframe.makeRPC('playerSelectBubble', [bubbleIdGuess, colorAnswer, money, clientId, round]);
+	let stateData = {
+		'selectedBubble' : bubble,
+		'money' : money,
 	}
+	setStateOfNetworkIdentity(identity, NetworkStates.REWARD, stateData);
 
+}
+
+function checkIfAllReady(){
+	
 	let allReady = true;
 	let networkIdentities =  Object.values(netframe.getNetworkIdentities());
 	netframe.log('Checking if all participants are ready...');
 	for(let i in networkIdentities){
 		netframe.log('NetworkIdentity: ' + JSON.stringify(networkIdentities[i]));
-		if(!networkIdentities[i].selectedBubble){
+		if(!networkIdentities[i].stateData.selectedBubble){
 			allReady = false;
 			break;
 		}
 	}
-
-	if(allReady){
-		if(modelController.getGameManager().round[0] >= modelController.getGameManager().maxRounds) {
-			setTimeout(
-				function () {
-					gameOver(true);
-				}, 3000);
-		}else{
-			// Transition to new round (bubble scene)
-			setTimeout(
-				function() {
-					for(let i in networkIdentities){
-						networkIdentities[i].selectedBubble = null;
-					}
-					netframe.makeRPC('loadSocialScene', [round]);
-
-				}, 4000);
-		}
-
-
-	}
+	netframe.log('Is all ready : ' + allReady);
+	return allReady;
 }
 
-function cmdSelectParticipant(clientId, selectedParticipantsId, mouseData){
-	let identity = netframe.getNetworkIdentityFromClientId(clientId);
+function cmdContinueFromRewardScene(clientId){
+	netframe.log('cmdContinueFromRewardScene() was called');
+	let networkIdentity = netframe.getNetworkIdentityFromClientId(clientId);
+	let round = modelController.getGameManager().round[networkIdentity.identityId];
 
-	let playerIndex;
+	netframe.log('is networkmode: ' + db.gameSettings.networkMode );
 
-	if(!db.gameSettings.networkMode){
-		playerIndex = identity.identityId;
+	if(db.gameSettings.networkMode){
+		
+		if(checkIfAllReady()){
+			if(modelController.getGameManager().round[0] >= modelController.getGameManager().maxRounds) {
+				setTimeout(
+					function () {
+						gameOver(true);
+					}, 1000);
+			}else{
+				netframe.log('Transition to social scene');
+
+				let networkIdentities = netframe.getNetworkIdentities();
+
+				let networkIdentitiesData = [];
+
+				//Create struct
+				for(let i in networkIdentities){
+					
+					networkIdentitiesData.push({
+						'identityId' : networkIdentities[i].identityId,
+						'clientId' : networkIdentities[i].clientId,
+						'lastScore' : networkIdentities[i].lastScore,
+						'selectedBubble' : networkIdentities[i].selectedBubble
+					})
+					
+				}
+
+				let stateData = {
+					'networkIdentitiesData' : networkIdentitiesData
+				}
+
+				//Send to clients
+				for(let i in networkIdentities){
+					setStateOfNetworkIdentity(networkIdentities[i], NetworkStates.SOCIAL, stateData);
+				}
+			}
+		}else{
+			netframe.log('not everyone is ready yet');
+		}
 	}else{
-		playerIndex = 0;
+		let maxRounds =  modelController.getGameManager().maxRounds;
+		if(round >= maxRounds) {
+			netframe.log('Current round: ' + round + ', max rounds reached for client: ' + clientId + ', with ID: ' + networkIdentity.identityId);
+			gameOver(true, clientId);
+	
+		}
+		else
+		{
+			// Transition to new round (bubble scene)
+			netframe.log('Current round: ' + round + ', for client ' + clientId + ', with ID: ' + networkIdentity.identityId + ' - maxRounds: ' + maxRounds + '\nGoing to next round');
+			startRound(clientId);
+		}
 	}
 
-	// TODO(dan): Check if round has been added correctly
-	let round = modelController.getGameManager().round[playerIndex]-1;
-	netframe.makeRPC('selectedParticipant',[clientId, round, selectedParticipantsId]);
+	
+}
+
+function cmdSelectParticipant(clientId, selectedParticipants, mouseData){
+	let identity = netframe.getNetworkIdentityFromClientId(clientId);
+	let round = modelController.getGameManager().round[0]-1;
+
+	modelController.selectedParticipant(identity, round, selectedParticipants);
+
+	let selectedParticipantsId = [];
+	for(let i in selectedParticipantsId){
+		selectedParticipantsId.push(selectedParticipantsId[i].identityId);
+	}
 
 	// Save data
 	let socialSceneData = new dataClasses.SocialSceneData(identity.popularityFactor, selectedParticipantsId, mouseData);
-	gameData.roundData[modelController.getGameManager().round[playerIndex]-1].participantRoundData[identity.identityId].socialSceneData.push(socialSceneData);
+	gameData.roundData[modelController.getGameManager().round[0]-1].participantRoundData[identity.identityId].socialSceneData.push(socialSceneData);
 
-	let rdy = isAllReady();
-
-	if(allReady){
-		// Transition to new round (bubble scene)
-		setTimeout(
-			function() {
-				startRound();
-			}, 500);
-
-	}
+	let hasFinished = modelController.hasEveryoneFinishedSocial (round);
+	netframe.log('EveryoneHasFinishedSocial: ' + hasFinished);
+	if(hasFinished){
+		startRound();
+    }
 
 }
 
@@ -228,6 +223,7 @@ const commands = {
 	'cmdSelectParticipant': cmdSelectParticipant,
 	'cmdFinishedGame': cmdFinishedGame,
 	'cmdRequestState': cmdRequestState,
+	'cmdContinueFromRewardScene' : cmdContinueFromRewardScene
 };
 
 //---------------------------------------------------------------
@@ -265,26 +261,26 @@ function clientConnected(client, networkIdentity){
 
 	// make initial state for client
 	let stateObj = createInitState(networkIdentity);
-	setStateOfNetworkIdentity(networkIdentity, stateObj.state, stateObj.stateData);
+	setStateOfNetworkIdentity(networkIdentity, stateObj.state, stateObj.stateData, false);
 
-	netframe.log('Checking if all players are ready... Max players are: ' + modelController.getGameManager().numberOfPlayers + ', current number of players: ' + netframe.getNetworkIdentitiesSize());
+	netframe.log('Checking if all players are ready... Max players are: ' + modelController.getGameManager().maxPlayers + ', current number of players: ' + netframe.getNetworkIdentitiesSize());
 
 	if(modelController.getGameManager().gameState === modelController.getGameManager().GAMESTATES.WAITING){
 		netframe.log('Game is in waiting mode..');
 		
-		if(netframe.getNetworkIdentitiesSize() === modelController.getGameManager().numberOfPlayers){
+		if(netframe.getNetworkIdentitiesSize() === modelController.getGameManager().maxPlayers){
 			netframe.log('Game is starting soon...');
 
 			netframe.log('Adding hint to client!');
 			networkIdentity.hasHint = true;
 
-			//setTimeout(startRound, 5000);
+			setTimeout(startRound, 1000);
 
 			
 		}else{
 			netframe.log('Not all players are here yet...');
 			netframe.log('Size type: ' + typeof netframe.getNetworkIdentitiesSize());
-			netframe.log('numberOfPlayers type: ' + typeof modelController.getGameManager().numberOfPlayers);
+			netframe.log('maxPlayers type: ' + typeof modelController.getGameManager().maxPlayers);
 		}
 	}else{
 		netframe.log('Game is NOT in waiting mode..');
@@ -307,19 +303,23 @@ function createInitState(networkIdentity){
 			'round' : round,
 			'maxRounds' : modelController.getGameManager().maxRounds,
 			'numberOfPlayers' : netframe.getNetworkIdentitiesSize(),
-			'maxPlayers' : modelController.getGameManager().numberOfPlayers
+			'maxPlayers' : modelController.getGameManager().maxPlayers
 		}
 	};
 	
 	return stateObj;
 }
 
-function setStateOfNetworkIdentity(networkIdentity, state, stateData){
+function setStateOfNetworkIdentity(networkIdentity, state, stateData, shouldSendState = true){
 
 	networkIdentity.state = state;
 	networkIdentity.stateData = stateData;
 
-	sendCurrentNetworkIdentityState(networkIdentity);
+	netframe.log('test...\n' + JSON.stringify(netframe.getNetworkIdentities()));
+
+	if(shouldSendState){
+		sendCurrentNetworkIdentityState(networkIdentity);
+	}
 }
 
 function sendCurrentNetworkIdentityState(networkIdentity){
@@ -328,6 +328,8 @@ function sendCurrentNetworkIdentityState(networkIdentity){
 		'state': networkIdentity.state,
 		'stateData' : networkIdentity.stateData
 	};
+
+	
 
 	netframe.makeRPC('updateState', [stateObj], networkIdentity.clientId);
 
@@ -447,6 +449,7 @@ function startRound(clientId){
 		}
 	}else{
 		netframe.log('Starting multi player round for all clients...');
+		let networkIdentities = netframe.getNetworkIdentities()
 		for(let identityIndex in networkIdentities){
 			let networkIdentity = networkIdentities[identityIndex];
 			modelController.getGameManager().round[0] = modelController.getGameManager().round[0] + 1;
@@ -533,7 +536,7 @@ function createGameManager(){
 		netframe.log('Created Round Data: ' + JSON.stringify(roundData));
 	}
 
-	manager.numberOfPlayers = db.gameSettings.maxPlayers;
+	manager.maxPlayers = db.gameSettings.maxPlayers;
 	manager.maxRounds = db.gameSettings.maxRounds;
 	manager.gameMode = db.gameSettings.gameMode;
 	createFixedCards();
@@ -582,14 +585,16 @@ function changeAnswerMode(mode){
 	setAnswers();
 }
 
-function setNumberOfPlayers(amount){
+function setMaxPlayers(amount){
 	netframe.log('setNumberOfPlayers() called on serverController with: ' + Number(amount));
-	netframe.makeRPC('setNumberOfPlayers', [amount]);
+	//netframe.makeRPC('setNumberOfPlayers', [amount]);
+	modelController.setMaxPlayers(amount);
 }
 
 function setNumberOfRounds(amount){
 	netframe.log('setNumberOfRounds() called on serverController with: ' + Number(amount));
-	netframe.makeRPC('setNumberOfRounds', [amount]);
+	//netframe.makeRPC('setNumberOfRounds', [amount]);
+	modelController.setNumberOfRounds(amount);
 }
 
 function setAnswers(){
@@ -805,7 +810,12 @@ function gameOver(isFinished, clientId){
 		//Save score to gameData
 		gameData.finalScore.push({id: clientId, score: finalScore});
 
-		netframe.makeRPC('loadFinalScene', [finalScore], clientId);
+		//netframe.makeRPC('loadFinalScene', [finalScore], clientId);
+		let stateData = {
+			'finalScore' : finalScore
+		}
+		setStateOfNetworkIdentity(networkIdentity, NetworkStates.FINISHED, stateData);
+
 	}else{
 		let networkIdentities = Object.values(netframe.getNetworkIdentities());
 		for (let ni in networkIdentities){
@@ -817,7 +827,11 @@ function gameOver(isFinished, clientId){
 			//Save score to gameData
 			gameData.finalScore.push({id: networkIdentity.clientId, score: finalScore});
 
-			netframe.makeRPC('loadFinalScene', [finalScore], networkIdentities[ni].clientId);
+			//netframe.makeRPC('loadFinalScene', [finalScore], networkIdentities[ni].clientId);
+			let stateData = {
+				'finalScore' : finalScore
+			}
+			setStateOfNetworkIdentity(networkIdentities[ni], NetworkStates.FINISHED, stateData);
 		}
 	}
 

@@ -42,7 +42,7 @@ class GameManager {
 		this.moneyGroups = [];
 		this.round = [];
 		this.maxRounds = 1;
-		this.numberOfPlayers = 4;
+		this.maxPlayers = 4;
 		this.gameMode = 'risky';
 
 		this.numberOfRandomScores = 1;

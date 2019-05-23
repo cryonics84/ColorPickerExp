@@ -133,9 +133,11 @@ function clientConnected(client){
     server.send('setClientId', {clientId: client}).toClient(client);
 
     //Give him existing IDs
+    /*
     for(let networkIdentity in Object.keys(networkIdentities)){
         server.send('createNetworkIdentity', {networkIdentity: networkIdentities[networkIdentity]}).toClient(client)
     }
+*/
 
     //Check if client was already connected, else create network ID
     let networkIdentity = Object.values(networkIdentities).find(networkIdentity => networkIdentity.clientId === client);
@@ -159,20 +161,9 @@ function clientConnected(client){
 function clientDisconnected(clientId){
     log('[NetFrame] clientDisconnected() called with client: ' + clientId);
 
-
-    //remove client owned assets
-
-    let entitiesId = [];
-    for (let [key, value] of entities.entries()) {
-        if(value.owner === clientId) entitiesId.push(key);
-    }
-    log('Removing entities: ' + entitiesId);
-    RpcRemoveEntities(entitiesId);
-    server.send('removeEntities', {entitiesId: entitiesId}).toAll();
-
     //remove network identity
     RpcRemoveNetworkIdentity(clientId);
-    server.send('removeNetworkIdentity', {clientId: clientId}).toAll();
+    //server.send('removeNetworkIdentity', {clientId: clientId}).toAll();
 }
 
 function getNetworkID(){
@@ -204,7 +195,8 @@ function createNetworkIdentity(client, id){
     //let networkIdentity = rpcController.RpcCreateNetworkIdentity(identityId, client, randomName, rpcController.getNetworkIdentityColors()[identityId]);
     let networkIdentity = RpcCreateNetworkIdentity(id, client, randomName, rpcController.getNetworkIdentityColors()[id]);
 
-    server.send('createNetworkIdentity', {networkIdentity: networkIdentity}).toAll();
+    // no need to notify client
+    //server.send('createNetworkIdentity', {networkIdentity: networkIdentity}).toClient(client);
 
     return networkIdentity;
 
@@ -278,13 +270,11 @@ function executeRpcOnModel(data){
 
 
 function resetClient(){
-    modelMap = new Map();
-    entities = new Map();
-    networkIdentities = {};
+    //networkIdentities = {};
 }
 
 function makeCmd(cmd, params){
-
+    log('Making CMD: ' + cmd + ', with params: ' + JSON.stringify(params));
     let data = {command: cmd, params: params};
     getClient().send('executeCmd', data);
 }
@@ -328,9 +318,9 @@ function log(msg){
 function getNetworkIdentityFromClientId(clientId){
     log('Called GetNetworkIdentityFromClientId(). Iterating Network identities...');
     for (const identity in networkIdentities){
-        log('Checking identity: ' + JSON.stringify(networkIdentities[identity]));
+        log('Checking identity: ' + JSON.stringify(networkIdentities[identity]) + '\n');
         if(networkIdentities[identity].clientId == clientId){
-            log('Found network identity: ' + networkIdentities[identity] + ' from clientId: ' + clientId);
+            log('Found network identity: ' + networkIdentities[identity] + ' from clientId: ' + clientId + '\n');
             return networkIdentities[identity];
         }
     }

@@ -8,7 +8,7 @@ import * as monsterr from "monsterr";
 // Variables
 //---------------------------------------------------------------
 
-const NetworkStates = { LOBBY: 0, BUBBLE: 1, REWARD: 2, CERTAINTY: 3, SOCIAL: 4, FINISHED: 5, READYBUBBLE: 6};
+export const NetworkStates = { LOBBY: 0, BUBBLE: 1, REWARD: 2, CERTAINTY: 3, SOCIAL: 4, FINISHED: 5, READYBUBBLE: 6, WAITINGFORSOCIAL: 7};
 
 const rpcs = {
     playerSelectBubble: playerSelectBubble,
@@ -36,6 +36,10 @@ function init(client){
     view.init();
 
     //loadLobby();
+    setTimeout(
+        function () {
+            cmdRequestState(true);
+        }, 1000);
     //cmdRequestState();
 }
 
@@ -64,7 +68,7 @@ function clientDisconnected(){
 
 
 function updateState(stateObj){
-    netframe.log('updateState() was called with state: ' + stateObj['state']);
+    netframe.log('updateState() was called with: ' + JSON.stringify(stateObj));
 
 	switch (stateObj.state){
 	case NetworkStates.LOBBY:
@@ -74,16 +78,16 @@ function updateState(stateObj){
 		setBubbleState(stateObj.stateData);
 		break;
 	case NetworkStates.REWARD:
-        setBubbleState(stateObj.stateData);
+        setRewardState(stateObj.stateData);
 		break;
 	case NetworkStates.CERTAINTY:
         setBubbleState(stateObj.stateData);
 		break;
 	case NetworkStates.SOCIAL:
-        setBubbleState(stateObj.stateData);
+        setSocialState(stateObj.stateData);
 		break;
 	case NetworkStates.FINISHED:
-        setBubbleState(stateObj.stateData);
+        setFinishedState(stateObj.stateData);
 		break;
 	case NetworkStates.READYBUBBLE:
 		setBubbleState(stateObj.stateData);
@@ -104,13 +108,16 @@ function setBubbleState(stateData){
 function setCertaincyState(){
 }
 
-function setSocialState(){
+function setSocialState(stateData){
+    view.loadSocialScene(stateData.networkIdentitiesData);
 }
 
-function setRewardState(){
+function setRewardState(stateData){
+    view.loadRewardScene(stateData.selectedBubble, stateData.money)
 }
 
-function setFinishedState(){
+function setFinishedState(stateData){
+    view.loadFinalScene(stateData.finalScore);
 }
 
 function setReadyBubbleState(){
@@ -136,7 +143,7 @@ function loadLobby(){
 
 function loadSocialScene(){
     netframe.log('loadSocialScene() called on clientController');
-    view.loadAvatarScene();
+    view.loadSocialScene();
 }
 
 function loadFinalScene(score){
@@ -162,8 +169,7 @@ function cmdSelectBubble(bubbleId, mouseData){
 }
 
 function cmdSelectParticipant(selectedParticipants, mouseData){
-    netframe.log('cmdSelectParticipant() called with: ' + arguments);
-    netframe.getMyNetworkIdentity().selectedPartipant = selectedParticipants;
+    netframe.log('cmdSelectParticipant() called with: ' + JSON.stringify(arguments));
     netframe.makeCmd('cmdSelectParticipant', [netframe.getClientId(), selectedParticipants, mouseData]);
 }
 
@@ -174,6 +180,7 @@ function cmdFinishedGame(canvasSize){
 
 
 function cmdRequestState(){
+    netframe.log('cmdRequestState() was called');
     netframe.makeCmd('cmdRequestState', [netframe.getClientId()]);
 }
 

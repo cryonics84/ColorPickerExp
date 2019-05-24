@@ -48,7 +48,36 @@ class GameManager {
 		this.numberOfRandomScores = 1;
 		this.scoreMultiplier = 0.05;
 		this.finalScore = 0;
+		this.visibleClientDataArr;
+
+		
 	}
+
+	getVisibleNetworkIdentitiesOfClientId(clientId) {
+		netframe.log('getVisibleNetworkIdentitiesOfClientId() called on GameManger');
+		let visibleNetworkIdentities = [];
+		
+		netframe.log('Logging crossTableClientData: ' + JSON.stringify(this.crossTableClientData));
+
+		let visibleClients;
+		for(let clientData in this.visibleClientDataArr){
+			if(clientData.client === clientId){
+				visibleClients = clientData.visibleClients;
+				break;
+			}
+		}
+
+		netframe.log('visibleClients: ' + visibleClients);
+
+		
+		for(let i = 0, visibleClient; visibleClient = visibleClients[i]; i++){
+			if(visibleClient !== ''){
+				let networkIdentity = netframe.getNetworkIdentityFromClientId(visibleClient);
+				visibleNetworkIdentities.push(networkIdentity);
+			}
+		}
+		return visibleNetworkIdentities;
+	};
 }
 
 

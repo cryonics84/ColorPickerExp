@@ -28,6 +28,7 @@ export class NetworkIdentity {
 		this.lastScore = 0;
 		this.scores = [];
 		this.isReady = false;
+
         
 	}
 }

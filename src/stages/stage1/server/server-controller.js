@@ -79,7 +79,8 @@ function cmdSelectBubble (bubbleIdGuess, clientId, mouseData) {
 		'selectedBubble' : bubble,
 		'money' : money,
 	}
-	setStateOfNetworkIdentity(identity, NetworkStates.REWARD, stateData);
+	
+	setStateOfNetworkIdentity(identity, NetworkStates.CERTAINTY, stateData);
 
 }
 
@@ -218,12 +219,19 @@ function cmdRequestState(clientId){
 	sendCurrentNetworkIdentityState(netframe.getNetworkIdentityFromClientId(clientId));
 }
 
+function cmdSelectedCertainty(clientId, certainty){
+	let networkIdentity = netframe.getNetworkIdentityFromClientId(clientId);
+	
+	setStateOfNetworkIdentity(networkIdentity, NetworkStates.REWARD, networkIdentity.stateData);
+}
+
 const commands = {
 	'cmdSelectBubble': cmdSelectBubble,
 	'cmdSelectParticipant': cmdSelectParticipant,
 	'cmdFinishedGame': cmdFinishedGame,
 	'cmdRequestState': cmdRequestState,
-	'cmdContinueFromRewardScene' : cmdContinueFromRewardScene
+	'cmdContinueFromRewardScene' : cmdContinueFromRewardScene,
+	'cmdSelectedCertainty' : cmdSelectedCertainty
 };
 
 //---------------------------------------------------------------
@@ -287,6 +295,9 @@ function clientConnected(client, networkIdentity){
 	}
 
 	//netframe.getServer().send('printEntities', Object.values(netframe.getNetworkIdentities())).toAdmin();
+	
+	netframe.log('printing visible clients of client: ' + client);
+	netframe.log(modelController.getGameManager().getVisibleNetworkIdentitiesOfClientId(client));
 }
 
 //---------------------------------------------------------------
@@ -505,8 +516,6 @@ function initData(){
 function createGameManager(){
 	let manager = modelController.createGameManager();
 
-	//PLAYERS!?!? That's wrong
-    
 	let players = netframe.getServer().getPlayers();
 	netframe.log('Setting round of each networkIdentity. Number of Identities: ' + players.length);
 
@@ -515,7 +524,7 @@ function createGameManager(){
 		manager.round[playerIndex] = 0;
 	}
 
-	netframe.log('Created GameManager: ' + JSON.stringify(manager));
+	
 
 	netframe.log('Creating Round Data...');
 	for(let round = 0; round < db.gameSettings.maxRounds; round++){
@@ -539,6 +548,12 @@ function createGameManager(){
 	manager.maxPlayers = db.gameSettings.maxPlayers;
 	manager.maxRounds = db.gameSettings.maxRounds;
 	manager.gameMode = db.gameSettings.gameMode;
+	manager.crossTableClientData = db.gameSettings.crossTableClientData;
+
+	netframe.log('Created GameManager: ' + JSON.stringify(manager));
+
+	
+
 	createFixedCards();
 }
 
@@ -647,12 +662,12 @@ function createFixedCards(){
 			let bubble = modelController.createBubble(cardGroupIdCounter++, mg.id);
 
 			bubble.colors = bubbleCollection[moneyGroupCounter-1][bubbleCounter-1];
-			netframe.log('Added colors: ' + JSON.stringify(bubble));
+			//netframe.log('Added colors: ' + JSON.stringify(bubble));
 
 			mg.bubbles.push(bubble);
 		}
 
-		netframe.log('Created money group: ' + JSON.stringify(mg));
+		//netframe.log('Created money group: ' + JSON.stringify(mg));
 		moneyGroups.push(mg);
 	}
 

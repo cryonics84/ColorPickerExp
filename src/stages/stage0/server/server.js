@@ -12,6 +12,7 @@ export default {
           db.gameSettings.maxRounds = Number(data[0]);
           db.gameSettings.gameMode = data[1];
           db.gameSettings.networkMode = data[2] === 'multi';
+          db.gameSettings.crossTableClientData = data[3];
 
       },
       'resetClient': function (server, _, ...args) {

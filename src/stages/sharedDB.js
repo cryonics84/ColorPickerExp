@@ -4,7 +4,8 @@ export let gameSettings = {
     maxRounds: 1,
     gameMode: 'risky',
     maxPlayers: 1,
-    networkMode: true
+    networkMode: true,
+    crossTableClientData: {}
 };
 
 export let uniformAnswers = ["YELLOW","ORANGE","BLUE","RED","YELLOW","GREEN","RED","RED","RED","PURPLE","GREEN","BLUE",

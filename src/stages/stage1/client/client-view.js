@@ -6,6 +6,7 @@ import emoji from './emoji.png';
 import emojiSelected from './emojiSelected.png';
 import speechBubble from './speechBubble3.png';
 import * as dataClasses from '../shared/model/data';
+import controller from '../shared/controller/controller';
 
 let canvas;
 let entityViewMap = new Map();
@@ -355,6 +356,66 @@ function loadSocialScene(networkIdentities){
 
     //drawRoundNumber();
 }
+
+function loadCertaintyScene(){
+
+    canvas.clear();
+
+    const Certainties = {
+        VERY: 1,
+        NEUTRAL: 2,
+        NOTATALL: 3
+    }
+
+    let offset = 50;
+    let position = {x: centerPoint.x, y: centerPoint.y, originX: 'center', originY: 'center'};
+
+    for(let key in Certainties){
+        //create option entry
+        createCertaintyOption(key, position);
+        position.y += offset;
+    }
+
+    /*
+    let speechBubble = new fabric.Image(speechBubbleImg);
+        speechBubble.set({
+            left: speechOffset.x,
+            top: speechOffset.y,
+            originX: 'center',
+            originY: 'center'
+        });
+        */
+
+}
+
+function createCertaintyOption(key, pos){
+    let text = createText(key, pos, 'black', 50);
+    addToCanvas(text);
+
+    let circleRadius = 10;
+
+        //let readyCircle = createBandView(-1, centerPoint.x, centerPoint.y,circleRadius,1,'white','black');
+
+        let circle = {
+            left: pos.x, top: pos.y,
+            originX: pos.originX - 50, originY: pos.originY,
+            fill: 'green',
+            radius: 10,
+            stroke: 'black',
+            strokeWidth: 2,
+            selectable: false,
+            hoverCursor: 'cursor'
+        };
+        let optionButton = new fabric.Circle(circle);
+
+        optionButton.on("mousedown", function (options) {
+            netframe.log('Clicked certainty option Button: ' + key);
+            clientController.cmdSelectedCertainty(key);
+        });
+
+        canvas.add(optionButton);
+}
+
 
 function clickedReady(){
     netframe.log('clickedReady() called on view');
@@ -1092,6 +1153,7 @@ const Iview = {
     loadRewardScene: loadRewardScene,
     loadBubbleScene: loadBubbleScene,
     loadLobby: loadLobby,
+    loadCertaintyScene: loadCertaintyScene,
     startRound: startRound,
     loadFinalScene: loadFinalScene,
     addHint: addHint

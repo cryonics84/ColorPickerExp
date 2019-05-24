@@ -81,7 +81,7 @@ function updateState(stateObj){
         setRewardState(stateObj.stateData);
 		break;
 	case NetworkStates.CERTAINTY:
-        setBubbleState(stateObj.stateData);
+        setCertaintyState(stateObj.stateData);
 		break;
 	case NetworkStates.SOCIAL:
         setSocialState(stateObj.stateData);
@@ -90,7 +90,7 @@ function updateState(stateObj){
         setFinishedState(stateObj.stateData);
 		break;
 	case NetworkStates.READYBUBBLE:
-		setBubbleState(stateObj.stateData);
+		//setBubbleState(stateObj.stateData);
 	}
 
 }
@@ -105,7 +105,8 @@ function setBubbleState(stateData){
 	view.startRound(stateData.moneyGroups, stateData.round, stateData.maxRounds);
 }
 
-function setCertaincyState(){
+function setCertaintyState(stateData){
+    view.loadCertaintyScene();
 }
 
 function setSocialState(stateData){
@@ -184,6 +185,11 @@ function cmdRequestState(){
     netframe.makeCmd('cmdRequestState', [netframe.getClientId()]);
 }
 
+function cmdSelectedCertainty(certainty){
+    netframe.log('cmdSelectedCertainty() was called');
+    netframe.makeCmd('cmdSelectedCertainty', [netframe.getClientId(), certainty]);
+}
+
 //---------------------------------------------------------------
 // RPC
 //---------------------------------------------------------------
@@ -198,5 +204,6 @@ export default {
     cmdSelectBubble: cmdSelectBubble,
     cmdSelectParticipant: cmdSelectParticipant,
     cmdFinishedGame: cmdFinishedGame,
+    cmdSelectedCertainty: cmdSelectedCertainty,
     rpcs: rpcs
 }

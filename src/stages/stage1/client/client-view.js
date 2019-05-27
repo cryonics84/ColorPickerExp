@@ -8,6 +8,12 @@ import speechBubble from './speechBubble3.png';
 import * as dataClasses from '../shared/model/data';
 import controller from '../shared/controller/controller';
 
+import emoji_lost from './avatars/emoji_lost.png';
+import emoji_won1 from './avatars/emoji_won1.png';
+import emoji_won2 from './avatars/emoji_won2.png';
+import emoji_won3 from './avatars/emoji_won3.png';
+import emoji_won4 from './avatars/emoji_won4.png';
+
 let canvas;
 let entityViewMap = new Map();
 let playersTxt;
@@ -22,6 +28,7 @@ let strokeWidth;
 let gapWidth;
 
 let emojiImg, speechBubbleImg;
+let emoji_lostImg, emoji_won1Img, emoji_won2Img, emoji_won3Img, emoji_won4Img;
 
 let mouseData = [];
 let mouseTimer;
@@ -269,6 +276,27 @@ function loadImages(){
     fabric.util.loadImage(speechBubble, function(img) {
         speechBubbleImg = img;
     });
+
+    fabric.util.loadImage(emoji_lost, function(img) {
+        emoji_lostImg = img;
+    });
+
+    fabric.util.loadImage(emoji_won1, function(img) {
+        emoji_won1Img = img;
+    });
+
+    fabric.util.loadImage(emoji_won2, function(img) {
+        emoji_won2Img = img;
+    });
+
+    fabric.util.loadImage(emoji_won3, function(img) {
+        emoji_won3Img = img;
+    });
+
+    fabric.util.loadImage(emoji_won4, function(img) {
+        emoji_won4Img = img;
+    });
+
 }
 
 /*
@@ -448,10 +476,39 @@ function selectParticipant(networkIdentities, selectedIndex, text, avatar){
     }
     selectedNetworkIdentities.push(selectedNetworkIdentity);
 
+    
     //avatar.filters[0].rotation = 2 * Math.random() - 1;
     avatar.filters.push(new fabric.Image.filters.Grayscale());
     avatar.applyFilters();
+    
+
+    
+    
     canvas.requestRenderAll();
+
+}
+
+function getEmojiFromScore(score){
+    if(score < 0){
+        return emoji_lostImg;
+    }
+
+    else if(score === 300){
+        return emoji_won1Img;
+    }
+
+    else if(score === 400){
+        return emoji_won2Img;
+    }
+
+    else if(score === 600){
+        return emoji_won3Img;
+    }
+
+    else if(score === 1200){
+        return emoji_won4Img;
+    }
+
 }
 
 function createAvatars(networkIdentities){
@@ -512,8 +569,10 @@ function createAvatars(networkIdentities){
             y: avatarPos.y,// * spacing.y,
         };
 
+            
+        
 
-        let emoji = new fabric.Image(emojiImg);
+        let emoji = new fabric.Image(getEmojiFromScore(networkIdentities[i].lastScore));
         emoji.set({
             left: 0,
             top: 0,
@@ -525,6 +584,12 @@ function createAvatars(networkIdentities){
         //emoji.filters = [new fabric.Image.filters.HueRotation()];
 
         subGroupArr.push(emoji);
+
+
+        //Create Color Bubble
+        let pie = drawPie(0, 0, 0, avatarSize/2, networkIdentities[i].selectedBubble.colors);
+        pie.opacity = 0;
+        subGroupArr.push(pie);
 
 
         let speechBubble = new fabric.Image(speechBubbleImg);
@@ -552,6 +617,8 @@ function createAvatars(networkIdentities){
 
         subGroup.on("mousedown", function (options) {
             selectParticipant(networkIdentities, i, text, emoji);
+            pie.opacity = 1;
+            emoji.opacity = 0;
         });
     }
 
@@ -658,6 +725,16 @@ function loadBubbleScene(moneyGroups, round, maxRounds){
     drawRoundNumber(round, maxRounds);
 }
 
+function loadWaitingForSocial(){
+    netframe.log('loadWaitingForSocial() was called on client-view');
+    canvas.clear();
+    let content = 'Waiting for other players...';
+    let position = {x: centerPoint.x, y: centerPoint.y, originX: 'center', originY: 'center'};
+    let color = 'red';
+    playersTxt = new createText(content, position, color);
+    addToCanvas(playersTxt);
+}
+
 function drawRoundNumber(round, maxRounds){
     netframe.log('drawRoundNumber() called');
 
@@ -742,6 +819,8 @@ function updateGUI(numberOfPlayers, maxPlayers){
 
     render();
 }
+
+
 
 function addHint(hintText){
     netframe.log('addHint() called in view with content : ' + hintText);
@@ -1156,7 +1235,8 @@ const Iview = {
     loadCertaintyScene: loadCertaintyScene,
     startRound: startRound,
     loadFinalScene: loadFinalScene,
-    addHint: addHint
+    addHint: addHint,
+    loadWaitingForSocial: loadWaitingForSocial
 };
 
 export default Iview;

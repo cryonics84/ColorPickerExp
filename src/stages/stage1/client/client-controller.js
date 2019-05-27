@@ -8,7 +8,7 @@ import * as monsterr from "monsterr";
 // Variables
 //---------------------------------------------------------------
 
-export const NetworkStates = { LOBBY: 0, BUBBLE: 1, REWARD: 2, CERTAINTY: 3, SOCIAL: 4, FINISHED: 5, READYBUBBLE: 6, WAITINGFORSOCIAL: 7};
+export const NetworkStates = { LOBBY: 0, BUBBLE: 1, REWARD: 2, CERTAINTY: 3, SOCIAL: 4, FINISHED: 5, WAITINGFORSOCIAL: 6};
 
 const rpcs = {
     playerSelectBubble: playerSelectBubble,
@@ -89,9 +89,13 @@ function updateState(stateObj){
 	case NetworkStates.FINISHED:
         setFinishedState(stateObj.stateData);
 		break;
-	case NetworkStates.READYBUBBLE:
-		//setBubbleState(stateObj.stateData);
-	}
+	case NetworkStates.WAITINGFORSOCIAL:
+        setWaitingForSocial();
+    default :
+        netframe.log('failed to find NetworkState');
+        break;
+    }
+    
 
 }
 
@@ -121,8 +125,9 @@ function setFinishedState(stateData){
     view.loadFinalScene(stateData.finalScore);
 }
 
-function setReadyBubbleState(){
-	view.startRound(currentRound);
+function setWaitingForSocial(){
+    netframe.log('setWaitingForSocial() called on client-controller');
+    view.loadWaitingForSocial();
 }
 
 

@@ -47,7 +47,7 @@ export class Session
 	}
 }
 
-export const NetworkStates = { LOBBY: 0, BUBBLE: 1, REWARD: 2, CERTAINTY: 3, SOCIAL: 4, FINISHED: 5, READYBUBBLE: 6, WAITINGFORSOCIAL: 7};
+export const NetworkStates = { LOBBY: 0, BUBBLE: 1, REWARD: 2, CERTAINTY: 3, SOCIAL: 4, FINISHED: 5, WAITINGFORSOCIAL: 6};
 
 export class ClientState {
 	constructor(){

@@ -48,7 +48,7 @@ class GameManager {
 		this.numberOfRandomScores = 1;
 		this.scoreMultiplier = 0.05;
 		this.finalScore = 0;
-		this.visibleClientDataArr;
+		this.crossTableClientData;
 
 		
 	}
@@ -59,9 +59,11 @@ class GameManager {
 		
 		netframe.log('Logging crossTableClientData: ' + JSON.stringify(this.crossTableClientData));
 
-		let visibleClients;
-		for(let clientData in this.visibleClientDataArr){
+		let visibleClients = [];
+		for(let i=0, clientData; clientData = this.crossTableClientData[i]; i++){
+			netframe.log(' Comparing clientData.client: ' + clientData.client + ', with clientId: ' + clientId);
 			if(clientData.client === clientId){
+				netframe.log('client found...');
 				visibleClients = clientData.visibleClients;
 				break;
 			}

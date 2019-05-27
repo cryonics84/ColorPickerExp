@@ -183,7 +183,7 @@ function startGame(){
     console.log('Starting ' + gameMode + ' game with maxRounds: ' + maxRounds);
 
     admin.sendCommand('start');
-    admin.sendCommand('setGameSettings', [maxRounds, gameMode, networkMode, getCrossTableClients()]);
+    admin.sendCommand('setGameSettings', [maxRounds, gameMode, networkMode, getCrossTableClients().clientDataArr]);
 
     
 }
@@ -260,6 +260,8 @@ function createCrossTable(clients){
     let cssIntersection = cssText + 'text-align: center;';
     let cssIntersectionColored = cssIntersection + 'background-color:#ffcc99;';
 
+    let cssInvalid = 'background-color:grey;';
+
     console.log('Creating cross table..');
     let clientLength = clients.length;
     for(let x = 0; x < clientLength+1; x++){
@@ -270,38 +272,60 @@ function createCrossTable(clients){
         {
             let cell = row.insertCell();
 
-            cell.onclick = function(){
-                clickedCell(cell, x, y)
-            };
+            
 
+            
             if(x === 0){
                 
                 if(y === 0){
-                    //Starting cell
-                    
+                    //Center cell
+                    cell.onmousedown = function(){
+                        clickedCenterCell(event, cell, x, y)
+                    };
+
                 }else{
                     // Column titles
                     cell.innerHTML = clients[y-1];
                     setStyle(cell, cssHeader);
+
+                    cell.onmousedown = function(){
+                        clickedClientColumn(event, cell, x, y)
+                    };
                 }
                 
             }
             else
             {
+                
+
                 if(y === 0){
                     //HEADER
                     cell.innerHTML = clients[x-1];
                     setStyle(cell, cssHeader);
+
+                    cell.onmousedown = function(){
+                        clickedClientRow(event, cell, x, y)
+                    };
                 }
                 else{
                     //Intersection cells
-                    cell.innerHTML = '';
-                    
-                    // color every 2nd cell - (offset by every 2nd cross cell)
-                    if((x + (y % 2 === 0)) % 2 === 0){
-                        setStyle(cell, cssIntersectionColored);
+
+                    if(x === y) {
+                        // same client cell - skip
+                        setStyle(cell, cssInvalid);
                     }else{
-                        setStyle(cell, cssIntersection);
+                        cell.innerHTML = '';
+                    
+                        cell.onclick = function(){
+                            clickedCell(cell, x, y)
+                        };
+    
+                        // color every 2nd cell - (offset by every 2nd cross cell)
+                        if((x + (y % 2 === 0)) % 2 === 0){
+                            setStyle(cell, cssIntersectionColored);
+                        }else{
+                            setStyle(cell, cssIntersection);
+                        }
                     }
                 }
             }
@@ -310,6 +334,32 @@ function createCrossTable(clients){
     console.log('Finished creating crosstable');
 }
 
+function setRowContent(rowIndex, content){
+    for (var i = 1, cell; cell = crossTable.rows[rowIndex].cells[i]; i++) {
+        if(i === rowIndex) continue;
+        cell.innerHTML = content;
+    }
+}
+
+function setColumnContent(columnIndex, content){
+    for (var i = 1, row; row = crossTable.rows[i]; i++) {
+        if(i === columnIndex) continue;
+        row.cells[columnIndex].innerHTML = content;
+    }
+}
+
+function setAllCellsContent(content){
+    for (var i = 1, row; row = crossTable.rows[i]; i++) {
+        //iterate through rows
+
+        for (var j = 1, cell; cell = row.cells[j]; j++) {
+            if(i === j) continue;
+            cell.innerHTML = content;
+        }
+    }
+}
+
+/*
 function appendClientToCrossTable(client){
     //insert new client vertically
     var row = crossTable.insertRow(-1);
@@ -319,7 +369,7 @@ function appendClientToCrossTable(client){
     //insert new client to headerline
     var headerCell = crossTable.rows[0].insertCell(-1);
     headerCell.innerHTML = client;
-}
+}*/
 
 function clickedCell(cell, x, y){
     console.log('Clicked cell [' + x + ', ' + y + ']');
@@ -329,6 +379,27 @@ function clickedCell(cell, x, y){
     }else{
         cell.innerHTML = "x";
     }
+}
+
+function clickedClientColumn(event,cell, x, y){
+    console.log('Clicked client column cell [' + x + ', ' + y + ']');
+    let content = 'x';
+    if(event.altKey) {content = ''};
+    setColumnContent(y, content);
+}
+
+function clickedClientRow(event, cell, x, y){
+    console.log('Clicked client row cell [' + x + ', ' + y + ']');
+    let content = 'x';
+    if(event.altKey) {content = ''};
+    setRowContent(x, content);
+}
+
+function clickedCenterCell(event, cell, x, y){
+    console.log('Clicked clickedCenterCell [' + x + ', ' + y + ']');
+    let content = 'x';
+    if(event.altKey) {content = ''};
+    setAllCellsContent(content);
 }
 
 function setStyle(element, style){
@@ -352,8 +423,14 @@ function getCrossTableClients(){
             //get visible clients from row
             //console.log('Iterating j: ' + j + ', visibleClientIndex: ' + visibleClientIndex);
 
-            let visibleClient =  visibleClientIndex.innerHTML;
-            visibleClients.push(visibleClient);
+            let isVisible = visibleClientIndex.innerHTML === 'x' ? true : false;
+            
+            if(isVisible){
+                let visibleClient =  crossTable.rows[0].cells[j].innerHTML;
+                visibleClients.push(visibleClient);
+            }
+
+            
 
         }
 

@@ -20,6 +20,10 @@ let gameData;
 // Commands
 //---------------------------------------------------------------
 
+//---------------------------------------------------------------
+// Core functions
+//---------------------------------------------------------------
+
 function cmdSelectBubble (bubbleIdGuess, clientId, mouseData) {
 	netframe.log('called cmdSelectBubble() on server with bubble id: ' + bubbleIdGuess + ', and networkIdentity: ' + clientId);
 
@@ -84,32 +88,18 @@ function cmdSelectBubble (bubbleIdGuess, clientId, mouseData) {
 
 }
 
-function checkIfAllReady(){
-	
-	let allReady = true;
-	let networkIdentities =  Object.values(netframe.getNetworkIdentities());
-	netframe.log('Checking if all participants are ready...');
-	for(let i in networkIdentities){
-		netframe.log('NetworkIdentity: ' + JSON.stringify(networkIdentities[i]));
-		if(!networkIdentities[i].stateData.selectedBubble){
-			allReady = false;
-			break;
-		}
-	}
-	netframe.log('Is all ready : ' + allReady);
-	return allReady;
-}
-
 function cmdContinueFromRewardScene(clientId){
 	netframe.log('cmdContinueFromRewardScene() was called');
-	let networkIdentity = netframe.getNetworkIdentityFromClientId(clientId);
-	let round = modelController.getGameManager().round[networkIdentity.identityId];
+	
 
 	netframe.log('is networkmode: ' + db.gameSettings.networkMode );
 
 	if(db.gameSettings.networkMode){
 		
-		if(checkIfAllReady()){
+		let networkIdentity = netframe.getNetworkIdentityFromClientId(clientId);
+		networkIdentity.isReady = true;
+
+		if(isAllReady()){
 			if(modelController.getGameManager().round[0] >= modelController.getGameManager().maxRounds) {
 				setTimeout(
 					function () {
@@ -120,33 +110,50 @@ function cmdContinueFromRewardScene(clientId){
 
 				let networkIdentities = netframe.getNetworkIdentities();
 
-				let networkIdentitiesData = [];
-
-				//Create struct
-				for(let i in networkIdentities){
-					
-					networkIdentitiesData.push({
-						'identityId' : networkIdentities[i].identityId,
-						'clientId' : networkIdentities[i].clientId,
-						'lastScore' : networkIdentities[i].lastScore,
-						'selectedBubble' : networkIdentities[i].selectedBubble
-					})
-					
-				}
-
-				let stateData = {
-					'networkIdentitiesData' : networkIdentitiesData
-				}
-
 				//Send to clients
 				for(let i in networkIdentities){
-					setStateOfNetworkIdentity(networkIdentities[i], NetworkStates.SOCIAL, stateData);
+
+					networkIdentity = networkIdentities[i];
+					networkIdentity.isReady = false;
+
+					let networkIdentitiesData = [];
+	
+					let visibleNetworkIdentities = modelController.getGameManager().getVisibleNetworkIdentitiesOfClientId(networkIdentity.clientId);
+
+	
+					//Create struct
+					for(let i in visibleNetworkIdentities){
+						
+						let data = {
+							'identityId' : visibleNetworkIdentities[i].identityId,
+							'clientId' : visibleNetworkIdentities[i].clientId,
+							'lastScore' : visibleNetworkIdentities[i].lastScore,
+							'selectedBubble' : visibleNetworkIdentities[i].selectedBubble
+						};
+
+						networkIdentitiesData.push(data);
+						networkIdentitiesData.push(data);
+						networkIdentitiesData.push(data);
+						networkIdentitiesData.push(data);
+						networkIdentitiesData.push(data);
+						
+					}
+	
+					let stateData = {
+						'networkIdentitiesData' : networkIdentitiesData
+					}
+
+					setStateOfNetworkIdentity(networkIdentity, NetworkStates.SOCIAL, stateData);
 				}
 			}
 		}else{
 			netframe.log('not everyone is ready yet');
+			let stateData = {};
+			setStateOfNetworkIdentity(networkIdentity, NetworkStates.WAITINGFORSOCIAL, stateData);
 		}
 	}else{
+		let networkIdentity = netframe.getNetworkIdentityFromClientId(clientId);
+		let round = modelController.getGameManager().round[networkIdentity.identityId];
 		let maxRounds =  modelController.getGameManager().maxRounds;
 		if(round >= maxRounds) {
 			netframe.log('Current round: ' + round + ', max rounds reached for client: ' + clientId + ', with ID: ' + networkIdentity.identityId);
@@ -196,20 +203,7 @@ function cmdFinishedGame(canvasSize, clientId){
 	let networkIdentity = netframe.getNetworkIdentityFromClientId(clientId);
 	networkIdentity.isReady = true;
 
-	//Check if everyone has finished
-	let allReady = true;
-	let networkIdentities =  Object.values(netframe.getNetworkIdentities());
-	netframe.log('Checking if all participants are ready...');
-	for(let i in networkIdentities){
-		netframe.log('NetworkIdentity: ' + JSON.stringify(networkIdentities[i]));
-		if(!networkIdentities[i].selectedBubble){
-			allReady = false;
-			break;
-		}
-	}
-
-	if(allReady){
-		//Everyone has finished the game
+	if(isAllReady()){
 		netframe.getServer().send('GameOver').toAdmin();
 	}
 }
@@ -233,10 +227,6 @@ const commands = {
 	'cmdContinueFromRewardScene' : cmdContinueFromRewardScene,
 	'cmdSelectedCertainty' : cmdSelectedCertainty
 };
-
-//---------------------------------------------------------------
-// Core functions
-//---------------------------------------------------------------
 
 function init(serverInstance){
 
@@ -296,13 +286,26 @@ function clientConnected(client, networkIdentity){
 
 	//netframe.getServer().send('printEntities', Object.values(netframe.getNetworkIdentities())).toAdmin();
 	
-	netframe.log('printing visible clients of client: ' + client);
-	netframe.log(modelController.getGameManager().getVisibleNetworkIdentitiesOfClientId(client));
+	
 }
 
 //---------------------------------------------------------------
 // Controller functions
 //---------------------------------------------------------------
+
+function isAllReady(){
+	let allReady = true;
+	netframe.log('Checking if all participants are ready...');
+	let networkIdentities =  Object.values(netframe.getNetworkIdentities());
+	for(let i in networkIdentities){
+		if(!networkIdentities[i].isReady){
+			allReady = false;
+			break;
+		}
+	}
+
+	return allReady;
+}
 
 function createInitState(networkIdentity){
 
@@ -339,9 +342,7 @@ function sendCurrentNetworkIdentityState(networkIdentity){
 		'state': networkIdentity.state,
 		'stateData' : networkIdentity.stateData
 	};
-
 	
-
 	netframe.makeRPC('updateState', [stateObj], networkIdentity.clientId);
 
 	/*
@@ -368,41 +369,6 @@ function sendCurrentNetworkIdentityState(networkIdentity){
 	}
 */
 
-}
-/*
-function _sendStateData(stateData, networkIdentity){
-	netframe.makeRPC('updateState', JSON.stringify(stateData), networkIdentity.clientId);
-}
-*/
-function getBubbleState(identity){
-	let stateData = {
-		'moneyGroups' : modelController.getGameManager().moneyGroups
-	}
-	return stateData;
-}
-
-function getCertaincyState(){
-	return null;
-}
-
-function getSocialState(){
-	return null;
-}
-
-function getRewardState(){
-	return null;
-}
-
-function getFinishedState(){
-	return null;
-}
-
-function getReadyBubbleState(){
-	let stateData = {
-		'round' : modelController.getGameManager().round[identityId],
-		'moneyGroups' : modelController.getGameManager().moneyGroups[identityId]
-	};
-	return stateData;
 }
 
 function startRound(clientId){
@@ -460,10 +426,13 @@ function startRound(clientId){
 		}
 	}else{
 		netframe.log('Starting multi player round for all clients...');
+
+		modelController.getGameManager().round[0] = modelController.getGameManager().round[0] + 1;
+
 		let networkIdentities = netframe.getNetworkIdentities()
 		for(let identityIndex in networkIdentities){
 			let networkIdentity = networkIdentities[identityIndex];
-			modelController.getGameManager().round[0] = modelController.getGameManager().round[0] + 1;
+			
 			_startIndiviualRound(networkIdentity, 0);
 		}
 		
@@ -861,20 +830,6 @@ function reset(){
 	db.participants = [];
 
 	netframe.makeRPC('reset', []);
-}
-
-function isAllReady(){
-	let allReady = true;
-	netframe.log('Checking if all participants are ready...');
-	let networkIdentities =  Object.values(netframe.getNetworkIdentities());
-	for(let i in networkIdentities){
-		if(!networkIdentities[i].isReady){
-			allReady = false;
-			break;
-		}
-	}
-
-	return allReady;
 }
 
 //---------------------------------------------------------------

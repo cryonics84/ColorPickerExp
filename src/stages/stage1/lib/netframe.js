@@ -331,7 +331,7 @@ function getNetworkIdentityFromClientId(clientId){
 
 
 function getNetworkIdentities(){
-    log('Returning networkIdentities: ' + JSON.stringify(Object.values(networkIdentities)));
+    //log('Returning networkIdentities: ' + JSON.stringify(Object.values(networkIdentities)));
     return networkIdentities;
 }
 

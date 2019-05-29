@@ -113,7 +113,7 @@ function reset(){
     let networkIdentities = Object.values(netframe.getNetworkIdentities());
     for (let ni in networkIdentities){
 
-        networkIdentities[ni].state = NetworkStates.JOINED;
+        networkIdentities[ni].state = NetworkStates.LOGIN;
         networkIdentities[ni].selectedBubble = null;
         //networkIdentities[ni].contributionFactor = 0;
         networkIdentities[ni].popularityFactor = 0;
@@ -123,6 +123,9 @@ function reset(){
         networkIdentities[ni].scores = [];
         networkIdentities[ni].isReady = false;
         networkIdentities[ni].finalScore = 0;
+        networkIdentities[ni].password = '';
+
+        gameManager.gameState = gameManager.GAMESTATES.WAITING;
     }
 }
 

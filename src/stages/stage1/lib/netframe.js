@@ -335,6 +335,24 @@ function getNetworkIdentities(){
     return networkIdentities;
 }
 
+function isNetworkIdentityLoggedIn(networkIdentity){
+    return networkIdentity.password != ''; 
+}
+
+function getLoggedInUsersSize(){
+    return Object.keys(getLoggedInUsers()).length;
+}
+
+function getLoggedInUsers(){
+    let loggedInUsers = [];
+    for (const identity in networkIdentities){
+        if(isNetworkIdentityLoggedIn(networkIdentities[identity])){
+            loggedInUsers.push(networkIdentities[identity]);
+        }
+    }
+    return loggedInUsers;
+}
+
 function getModelMap(){
     return modelMap;
 }
@@ -394,7 +412,9 @@ export const sharedInterface = {
     removeClientConnectedCallback: removeClientConnectedCallback,
     addClientDisconnectedCallback: addClientDisconnectedCallback,
     removeClientDisconnectedCallback: removeClientDisconnectedCallback,
-    getNetworkIdentitiesSize: getNetworkIdentitiesSize
+    getNetworkIdentitiesSize: getNetworkIdentitiesSize,
+    getLoggedInUsers: getLoggedInUsers,
+    getLoggedInUsersSize: getLoggedInUsersSize
 };
 
 /**---------------------------------------------------------------

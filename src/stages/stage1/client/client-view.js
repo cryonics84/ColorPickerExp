@@ -1236,7 +1236,107 @@ const Iview = {
     startRound: startRound,
     loadFinalScene: loadFinalScene,
     addHint: addHint,
-    loadWaitingForSocial: loadWaitingForSocial
+    loadWaitingForSocial: loadWaitingForSocial,
+    loadLogin: loadLogin
 };
+
+let loginText;
+function loadLogin(){
+    netframe.log('loadLogin() called in view');
+    canvas.clear();
+
+    addToCanvas(createLoginText('Enter password:' , false));
+    loginPasswordObj = createLoginText('test' , true);
+    addToCanvas(loginPasswordObj);
+    addToCanvas(createLoginText('Login' , false, function(){clickedLogin()}));
+
+}
+
+let loginPositionY = 0;
+
+let loginPasswordObj;
+
+function createLoginText(content, isEditable, onClickCallback){
+    let position = {
+        x: centerPoint.x,
+        y: (centerPoint.y + loginPositionY),
+        originX: 'center',
+        originY: 'center'
+    }
+
+    loginPositionY += 75;
+    let fontSize = 50;
+    let fontColor = 'black';
+
+    let loginText = new fabric.IText(content, {
+        fontFamily: 'Verdana',
+        left: position.x, top: position.y,
+        originX: position.originX, originY: position.originY,
+        fill: fontColor,
+        selectable: false,
+        hoverCursor: isEditable ? 'text' : 'cursor',
+        fontSize: fontSize,
+        lineHeight : 1,
+        textAlign: 'center',
+        editable: isEditable,
+        //backgroundColor: "red"
+    });
+
+    
+
+    if(isEditable){
+
+        let box = createBox(500, 75, position, 'yellow');
+        //canvas.sendToBack(box);
+
+        box.on('mousedown', function() {
+            netframe.log('Clicked on edit field');
+            //loginText.text = '';
+            //canvas.setActiveObject(loginText);
+            loginText.enterEditing();
+            
+
+          });
+    }
+
+    if(onClickCallback){
+
+        loginText.on("mousedown", function (options) {
+            netframe.log('Clicked on login button');
+            onClickCallback();
+        });
+    }
+
+    return loginText;
+}
+
+function createBox(width, height, position, color){
+    var rect = new fabric.Rect({
+        width: width,
+        height: height,
+        left: position.x,
+        top: position.y,
+        originX: position.originX, originY: position.originY,
+        fill: color,
+        draggable: false,
+        selectable: false,
+        hoverCursor: 'cursor'
+        });
+
+    netframe.log('created rect: ' + JSON.stringify(rect));
+
+    addToCanvas(rect);
+
+    return rect;
+}
+
+
+function clickedLogin(){
+    netframe.log('clickedLogin() was called');
+    let password = loginPasswordObj.text;
+    netframe.log('Password entered: ' + password);
+
+    netframe.makeCmd('cmdLogin', [netframe.getClientId(), password]);
+}
 
 export default Iview;

@@ -8,7 +8,7 @@ import * as monsterr from "monsterr";
 // Variables
 //---------------------------------------------------------------
 
-export const NetworkStates = { LOBBY: 0, BUBBLE: 1, REWARD: 2, CERTAINTY: 3, SOCIAL: 4, FINISHED: 5, WAITINGFORSOCIAL: 6};
+export const NetworkStates = { LOBBY: 0, BUBBLE: 1, REWARD: 2, CERTAINTY: 3, SOCIAL: 4, FINISHED: 5, WAITINGFORSOCIAL: 6, LOGIN: 7};
 
 const rpcs = {
     playerSelectBubble: playerSelectBubble,
@@ -91,12 +91,18 @@ function updateState(stateObj){
 		break;
 	case NetworkStates.WAITINGFORSOCIAL:
         setWaitingForSocial();
+    case NetworkStates.LOGIN:
+        setLoginState(stateObj.stateData);
     default :
         netframe.log('failed to find NetworkState');
         break;
     }
     
 
+}
+
+function setLoginState(stateData){
+    view.loadLogin();
 }
 
 function setLobbyState(stateData){

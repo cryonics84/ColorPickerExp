@@ -14,6 +14,7 @@ export class NetworkIdentity {
 	constructor(identityId, clientId, name, color){
 		this.identityId = identityId;
 		this.clientId = clientId;
+		this.password = '';
 		this.name = name;
 		this.color = color;
 		this.state = NetworkStates.LOBBY;
@@ -47,7 +48,7 @@ export class Session
 	}
 }
 
-export const NetworkStates = { LOBBY: 0, BUBBLE: 1, REWARD: 2, CERTAINTY: 3, SOCIAL: 4, FINISHED: 5, WAITINGFORSOCIAL: 6};
+export const NetworkStates = { LOBBY: 0, BUBBLE: 1, REWARD: 2, CERTAINTY: 3, SOCIAL: 4, FINISHED: 5, WAITINGFORSOCIAL: 6, LOGIN: 7};
 
 export class ClientState {
 	constructor(){

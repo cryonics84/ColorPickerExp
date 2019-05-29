@@ -219,13 +219,30 @@ function cmdSelectedCertainty(clientId, certainty){
 	setStateOfNetworkIdentity(networkIdentity, NetworkStates.REWARD, networkIdentity.stateData);
 }
 
+function cmdLogin(clientId, password){
+	netframe.log('cmdLogin() called with clientId: ' + clientId + ', password: ' + password);
+
+	let networkIdentity = netframe.getNetworkIdentityFromClientId(clientId);
+	networkIdentity.password = password;
+
+	netframe.log('Logged in users: ' + JSON.stringify(netframe.getLoggedInUsers()));
+
+	let stateData = {
+		
+	}
+	setStateOfNetworkIdentity(networkIdentity, NetworkStates.LOBBY, stateData);
+
+	StartGameIfReady();
+}
+
 const commands = {
 	'cmdSelectBubble': cmdSelectBubble,
 	'cmdSelectParticipant': cmdSelectParticipant,
 	'cmdFinishedGame': cmdFinishedGame,
 	'cmdRequestState': cmdRequestState,
 	'cmdContinueFromRewardScene' : cmdContinueFromRewardScene,
-	'cmdSelectedCertainty' : cmdSelectedCertainty
+	'cmdSelectedCertainty' : cmdSelectedCertainty,
+	'cmdLogin': cmdLogin
 };
 
 function init(serverInstance){
@@ -261,32 +278,35 @@ function clientConnected(client, networkIdentity){
 	let stateObj = createInitState(networkIdentity);
 	setStateOfNetworkIdentity(networkIdentity, stateObj.state, stateObj.stateData, false);
 
+
+	//netframe.getServer().send('printEntities', Object.values(netframe.getNetworkIdentities())).toAdmin();
+	
+	
+}
+
+function StartGameIfReady(){
+	
 	netframe.log('Checking if all players are ready... Max players are: ' + modelController.getGameManager().maxPlayers + ', current number of players: ' + netframe.getNetworkIdentitiesSize());
 
 	if(modelController.getGameManager().gameState === modelController.getGameManager().GAMESTATES.WAITING){
 		netframe.log('Game is in waiting mode..');
 		
-		if(netframe.getNetworkIdentitiesSize() === modelController.getGameManager().maxPlayers){
+		if(netframe.getLoggedInUsersSize() === modelController.getGameManager().maxPlayers){
 			netframe.log('Game is starting soon...');
 
-			netframe.log('Adding hint to client!');
-			networkIdentity.hasHint = true;
+			modelController.getGameManager().gameState = modelController.getGameManager().GAMESTATES.PLAYING;
 
-			setTimeout(startRound, 1000);
+			setTimeout(startRound, 2000);
 
 			
 		}else{
 			netframe.log('Not all players are here yet...');
-			netframe.log('Size type: ' + typeof netframe.getNetworkIdentitiesSize());
+			netframe.log('Size type: ' + typeof netframe.getLoggedInUsersSize());
 			netframe.log('maxPlayers type: ' + typeof modelController.getGameManager().maxPlayers);
 		}
 	}else{
 		netframe.log('Game is NOT in waiting mode..');
 	}
-
-	//netframe.getServer().send('printEntities', Object.values(netframe.getNetworkIdentities())).toAdmin();
-	
-	
 }
 
 //---------------------------------------------------------------
@@ -312,7 +332,7 @@ function createInitState(networkIdentity){
 	let round = db.gameSettings.networkMode ? 0 : networkIdentity.identityId;
 
 	let stateObj = {
-		'state': NetworkStates.LOBBY,
+		'state': NetworkStates.LOGIN,
 		'stateData' : {
 			'round' : round,
 			'maxRounds' : modelController.getGameManager().maxRounds,
@@ -828,6 +848,7 @@ function gameOver(isFinished, clientId){
 
 function reset(){
 	db.participants = [];
+
 
 	netframe.makeRPC('reset', []);
 }

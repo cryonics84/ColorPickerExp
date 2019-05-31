@@ -3,7 +3,7 @@ import serverController from '../server/server-controller';
 import clientController from '../client/client-controller'
 import model from "../shared/model/model";
 import {Events} from 'monsterr'
-import {NetworkIdentity} from "./entity";
+import {NetworkIdentity, ConnectionStates} from "./entity";
 import Entity from "./entity";
 import modelController from '../shared/controller/controller'
 
@@ -20,6 +20,7 @@ let updateCallbacks = [];
 let clientConnectCallbacks = [];
 let clientReconnectCallbacks = [];
 let clientDisconnectCallbacks = [];
+let clientLoggedInCallbacks = [];
 
 /**---------------------------------------------------------------
  | Client variables
@@ -71,14 +72,8 @@ function makeRPC(rpc, params, clientId){
 function resolveRPCbuffer(){
     rpcBuffer.forEach(rpc => {
         if(rpc.clientId){
-            log('rpc package has clientId attached. looking for it in networkIdentities: ' + rpc.clientId);
-            if(getNetworkIdentityFromClientId(rpc.clientId)){
-                log('sending RPC to specific client: ' + rpc.clientId);
+            log('sending RPC to specific client: ' + rpc.clientId);
                 server.send('executeRPC', rpc.data).toClient(rpc.clientId);
-            }else{
-                log('failed to find network identity of receiver!');
-                log('List of network identities: ' + JSON.stringify(networkIdentities));
-            }
         }else{
             if(getNetworkIdentitiesSize() > 0){
                 server.send('executeRPC', rpc.data).toAll();
@@ -104,6 +99,22 @@ function getServer(){
     return server;
 }
 
+function addClientLoggedInCallback(callback){
+    if(!clientLoggedInCallbacks.some(x => {return x === callback} )){
+        log('clientConnect Callback added to handler');
+        clientLoggedInCallbacks.push(callback);
+    }else{
+        log('clientConnect Callback already exists!')
+    }
+
+}
+
+function removeClientLoggedInCallback(callback){
+    let index = clientLoggedInCallbacks.indexOf(callback);
+    clientLoggedInCallbacks.splice(index, 1);
+}
+
+
 const serverInterface = {
     init: initServer,
     startLoop: startLoop,
@@ -111,7 +122,9 @@ const serverInterface = {
     makeRPC: makeRPC,
     addUpdateCallback: addUpdateCallback,
     removeUpdateCallback: removeUpdateCallback,
-    getServer: getServer
+    getServer: getServer,
+    addClientLoggedInCallback: addClientLoggedInCallback,
+    removeClientLoggedInCallback: removeClientLoggedInCallback
 }
 
 /**---------------------------------------------------------------
@@ -132,6 +145,8 @@ function clientConnected(client){
 
     server.send('setClientId', {clientId: client}).toClient(client);
 
+    return; 
+    
     //Give him existing IDs
     /*
     for(let networkIdentity in Object.keys(networkIdentities)){
@@ -158,12 +173,56 @@ function clientConnected(client){
     }
 }
 
+function clientLoggedIn(clientId, password){
+    log('clientLoggedIn() called with : ' + clientId + ' and ' + password);
+    //Check if networkIdentity exists
+    let networkIdentity = Object.values(networkIdentities).find(networkIdentity => networkIdentity.password === password);
+
+    if(networkIdentity){
+        //Override existing clientId
+        networkIdentity.clientId = clientId;
+        log('Making clientLoggedIn backin callbacks...');
+        clientLoggedInCallbacks.forEach(callback => {callback(networkIdentity, networkIdentity)});
+
+    }else{
+
+        log('New client');
+        let networkId = server.getPlayers().findIndex(player => player === clientId);
+        let networkIdentity = createNetworkIdentity(clientId, networkId);
+    
+        networkIdentity.password = password;
+
+        //log('Sending GameState to client...');
+        //sendGameStateToClient(client, getSerializedGameState());
+    
+        //Do server callback last
+        log('Making clientLoggedInCallbacks callbacks...');
+        clientLoggedInCallbacks.forEach(callback => {callback(networkIdentity, networkIdentity)});
+    }
+
+    
+}
+
 function clientDisconnected(clientId){
     log('[NetFrame] clientDisconnected() called with client: ' + clientId);
 
     //remove network identity
-    RpcRemoveNetworkIdentity(clientId);
+    //RpcRemoveNetworkIdentity(clientId);
     //server.send('removeNetworkIdentity', {clientId: clientId}).toAll();
+
+    let networkIdentity = getNetworkIdentityFromClientId(clientId);
+    if(networkIdentity){
+        networkIdentity.connectionState = ConnectionStates.DISCONNECTED;
+
+        let data = {
+            clientId: clientId,
+            connectionState: networkIdentity.connectionState
+        };
+    
+        log('sending client status to admin : ' + JSON.stringify(data));
+        server.send('updateClientState', data).toAdmin();
+    }
+
 }
 
 function getNetworkID(){
@@ -190,7 +249,7 @@ function getNetworkID(){
 function createNetworkIdentity(client, id){
     let randomName = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
 
-    log('Creating network identity...');
+    log('Creating network identity called with client: ' + client + ', id: ' + id);
 
     //let networkIdentity = rpcController.RpcCreateNetworkIdentity(identityId, client, randomName, rpcController.getNetworkIdentityColors()[identityId]);
     let networkIdentity = RpcCreateNetworkIdentity(id, client, randomName, rpcController.getNetworkIdentityColors()[id]);
@@ -366,6 +425,8 @@ function removeEndStageCallback(callback){
     endStageCallbacks.splice(index, 1);
 }
 
+
+
 function addClientConnectedCallback(callback){
     if(!clientConnectCallbacks.some(x => {return x === callback} )){
         log('clientConnect Callback added to handler');
@@ -531,6 +592,12 @@ const serverEvents = {
         log('Received clientConnected event from client with ID: ' + client);
         clientConnected(client);
     },
+
+    'clientLoggedIn': function (server, client, data) {
+        log('Received clientLoggedIn event from client with ID: ' + client);
+        clientLoggedIn(client, data.password);
+    },
+
     [Events.CLIENT_CONNECTED]: (monsterr, clientId) => {
         log(clientId, 'connected! Hello there :-)');
 

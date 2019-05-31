@@ -3,7 +3,7 @@ import stage1 from './src/stages/stage1/client/client'
 import stage0 from './src/stages/stage0/client/client'
 
 const stages = [
-  stage0, stage1
+  stage1
 ]
 
 let options = {

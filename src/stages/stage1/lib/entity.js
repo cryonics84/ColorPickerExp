@@ -30,7 +30,7 @@ export class NetworkIdentity {
 		this.scores = [];
 		this.isReady = false;
 
-        
+        this.connectionState = ConnectionStates.CONNECTED;
 	}
 }
 
@@ -48,6 +48,7 @@ export class Session
 	}
 }
 
+export const ConnectionStates = { CONNECTED: 1, DISCONNECTED: 2};
 export const NetworkStates = { LOBBY: 0, BUBBLE: 1, REWARD: 2, CERTAINTY: 3, SOCIAL: 4, FINISHED: 5, WAITINGFORSOCIAL: 6, LOGIN: 7};
 
 export class ClientState {

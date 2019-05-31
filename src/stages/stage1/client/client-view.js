@@ -263,9 +263,10 @@ function loadLobby(round, maxRound, numberOfPlayers, maxPlayers){
     netframe.log('loadLobby called() on view');
     //currentState = State.Lobby;
     canvas.clear();
-    createGUI();
-    updateGUI(numberOfPlayers, maxPlayers);
-    drawRoundNumber(round, maxRound);
+    let text = createText('Succesful Login\nWaiting for game to start...\n')
+    //createGUI();
+    //updateGUI(numberOfPlayers, maxPlayers);
+    //drawRoundNumber(round, maxRound);
 }
 
 function loadImages(){
@@ -709,7 +710,7 @@ function startRound(moneyGroups, round, maxRounds){
     netframe.log('startRound() was called');
     this.moneyGroups = moneyGroups;
     canvas.clear();
-    createGUI();
+    //createGUI();
     setReadyTextVisibility(true, 
         function(){return loadBubbleScene(moneyGroups, round, maxRounds)},
         'Click center circle to begin...',
@@ -1336,7 +1337,12 @@ function clickedLogin(){
     let password = loginPasswordObj.text;
     netframe.log('Password entered: ' + password);
 
-    netframe.makeCmd('cmdLogin', [netframe.getClientId(), password]);
+    let data = {
+        password: password
+    }
+
+    netframe.getClient().send('clientLoggedIn', data);
+    //netframe.makeCmd('cmdLogin', [netframe.getClientId(), password]);
 }
 
 export default Iview;

@@ -3,7 +3,7 @@ import stage1 from './src/stages/stage1/server/server'
 import stage0 from './src/stages/stage0/server/server'
 import serverController from "./src/stages/stage1/server/server-controller";
 
-const stages = [stage0, stage1];
+const stages = [stage1];
 
 let events = {
     [Events.CLIENT_CONNECTED] (server, clientId) {
@@ -21,11 +21,13 @@ let events = {
 };
 
 let commands = {
+    /*
     'getConnections': function (server, _, ...args) {
         console.log('getConnections command received. Sending to admin...');
         let msg = {clients: server.getPlayers()};
         server.send('resConnections', msg).toAdmin();
     },
+    */
     'reqGameData': function (server, _, ...args) {
         console.log('reqGameData command received on server..');
         serverController.sendGameData();
@@ -51,5 +53,5 @@ const monsterr = createServer({
 });
 
 monsterr.run();
-
+monsterr.start();
 

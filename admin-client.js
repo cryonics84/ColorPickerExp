@@ -20,7 +20,7 @@ let options = {
 let events = {
     'clientConnected': function (admin, data) {
         console.log('Received clientConnected event from server with data: ' + JSON.stringify(data));
-        updatePlayerList(data.clients);
+        //updatePlayerList(data.clients);
     },
     'clientDisconnected': function (admin, data) {
         console.log('Received clientDisconnected event from server with data: ' + JSON.stringify(data));
@@ -72,6 +72,11 @@ let events = {
         console.log('Received GameOver event from server with data: ' + JSON.stringify(data));
         gameOver();
     },
+    'clientLogin': function (admin, data) {
+        console.log('Received clientLogin event from server with data: ' + JSON.stringify(data));
+        //clientLogin(data.clientId, password);
+        updatePlayerList(data.clients);
+    },
 };
 let commands = {};
 
@@ -88,6 +93,7 @@ const admin = createClient({
 let hasStarted = false;
 let maxRounds = 0;
 let crossTable;
+let crossTableAmount = 0;
 
 insertHTML();
 
@@ -120,10 +126,15 @@ function insertHTML(){
 
     hideStuff();
 
-    admin.sendCommand('getConnections');
+    //admin.sendCommand('getLoggedInUsers');
 
-    createCrossTable([1,2,3]);
+    console.log('making cross table');
+    crossTableAmount = 15;
+    createCrossTable(crossTableAmount);
+
+
 }
+
 
 function hideStuff(){
     console.log('hideStuff() called');
@@ -182,7 +193,7 @@ function startGame(){
 
     console.log('Starting ' + gameMode + ' game with maxRounds: ' + maxRounds);
 
-    admin.sendCommand('start');
+    //admin.sendCommand('start');
     admin.sendCommand('setGameSettings', [maxRounds, gameMode, networkMode, getCrossTableClients().clientDataArr]);
 
     
@@ -201,17 +212,26 @@ function download(content, fileName, contentType) {
 }
 
 function updatePlayerList(clients){
+    console.log('updatePlayerList() called with: ' + clients);
     let ul = document.getElementById("playerList");
 
     ul.innerHTML = "";
 
     for(let clientIndex in clients){
-        let li = document.createElement("li");
-        li.appendChild(document.createTextNode(clients[clientIndex]));
-        ul.appendChild(li);
+        let index = Number(clientIndex) +1;
+        if(index < crossTableAmount){
+            console.log('Putting client in crosstable..');
+            appendClientToCrossTable(index, clients[clientIndex]);
+        }
+        else{
+            console.log('Putting client in waiting list..');
+            let li = document.createElement("li");
+            li.appendChild(document.createTextNode(clients[clientIndex]));
+            ul.appendChild(li);
+        }
     }
 
-    createCrossTable(clients);
+    //createCrossTable(clients);
 }
 
 function gameOver(){
@@ -220,11 +240,10 @@ function gameOver(){
 
 }
 
-function createCrossTable(clients){
-    console.log('createCrossTable() called with clients: ' + clients);
+function createCrossTable(amount){
+    console.log('createCrossTable() called with clients: ' + amount);
     let crossTableContainer = document.getElementById("crossTableContainer");
 
-    
     console.log('test1');
 
     //clear existing
@@ -263,29 +282,30 @@ function createCrossTable(clients){
     let cssInvalid = 'background-color:grey;';
 
     console.log('Creating cross table..');
-    let clientLength = clients.length;
-    for(let x = 0; x < clientLength+1; x++){
+    //let clientLength = clients.length;
+    let min = 0;
+    for(let x = min; x <= amount; x++){
 
         var row = crossTable.insertRow();
 
-        for(let y = 0; y < clientLength+1; y++)
+        for(let y = min; y <= amount; y++)
         {
             let cell = row.insertCell();
-
             
-
-            
-            if(x === 0){
+            if(x === min){
                 
-                if(y === 0){
+                if(y === min){
                     //Center cell
                     cell.onmousedown = function(){
                         clickedCenterCell(event, cell, x, y)
                     };
 
+                    cell.innerHTML = ('CENTER TEST');
+
                 }else{
                     // Column titles
-                    cell.innerHTML = clients[y-1];
+                    //cell.innerHTML = clients[y-1];
+                    cell.innerHTML = y;
                     setStyle(cell, cssHeader);
 
                     cell.onmousedown = function(){
@@ -298,9 +318,10 @@ function createCrossTable(clients){
             {
                 
 
-                if(y === 0){
+                if(y === min){
                     //HEADER
-                    cell.innerHTML = clients[x-1];
+                    //cell.innerHTML = clients[x-1];
+                    cell.innerHTML = x;
                     setStyle(cell, cssHeader);
 
                     cell.onmousedown = function(){
@@ -359,17 +380,15 @@ function setAllCellsContent(content){
     }
 }
 
-/*
-function appendClientToCrossTable(client){
-    //insert new client vertically
-    var row = crossTable.insertRow(-1);
-    var cell = row.insertCell(-1);
-    cell.innerHTML = client;
 
-    //insert new client to headerline
-    var headerCell = crossTable.rows[0].insertCell(-1);
-    headerCell.innerHTML = client;
-}*/
+function appendClientToCrossTable(index, clientId){
+    console.log('appendClientToCrossTable() called with index: ' + index + ', clientId: ' + clientId);
+    console.log('crossTable.rows[0].cells length: ' + crossTable.rows[0].cells.length);
+
+    crossTable.rows[0].cells[index].innerHTML = clientId;
+    console.log('crossTable.rows length: ' + crossTable.rows.length);
+    crossTable.rows[index].cells[0].innerHTML = clientId;
+}
 
 function clickedCell(cell, x, y){
     console.log('Clicked cell [' + x + ', ' + y + ']');

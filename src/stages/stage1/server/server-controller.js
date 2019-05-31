@@ -210,7 +210,19 @@ function cmdFinishedGame(canvasSize, clientId){
 
 function cmdRequestState(clientId){
 	netframe.log('cmdRequestState() was called with clientId: ' + clientId);
-	sendCurrentNetworkIdentityState(netframe.getNetworkIdentityFromClientId(clientId));
+	let networkIdentity = netframe.getNetworkIdentityFromClientId(clientId);
+	if(networkIdentity){
+		sendCurrentNetworkIdentityState();
+	}else{
+
+		let stateObj = {
+			'state': NetworkStates.LOGIN,
+			'stateData' : {}
+		};
+		
+		netframe.makeRPC('updateState', [stateObj], clientId);
+	}
+	
 }
 
 function cmdSelectedCertainty(clientId, certainty){
@@ -219,6 +231,7 @@ function cmdSelectedCertainty(clientId, certainty){
 	setStateOfNetworkIdentity(networkIdentity, NetworkStates.REWARD, networkIdentity.stateData);
 }
 
+/*
 function cmdLogin(clientId, password){
 	netframe.log('cmdLogin() called with clientId: ' + clientId + ', password: ' + password);
 
@@ -226,6 +239,19 @@ function cmdLogin(clientId, password){
 	networkIdentity.password = password;
 
 	netframe.log('Logged in users: ' + JSON.stringify(netframe.getLoggedInUsers()));
+	
+	let clients = [];
+	
+	let loggedInNetworkIdentities = netframe.getLoggedInUsers();
+	for(let key in loggedInNetworkIdentities){
+		clients.push(loggedInNetworkIdentities[key].clientId);
+	}
+
+	let msg = {
+		clients : clients
+	}
+
+	netframe.getServer().send('clientLogin', msg).toAdmin();
 
 	let stateData = {
 		
@@ -233,7 +259,10 @@ function cmdLogin(clientId, password){
 	setStateOfNetworkIdentity(networkIdentity, NetworkStates.LOBBY, stateData);
 
 	StartGameIfReady();
+
+	
 }
+*/
 
 const commands = {
 	'cmdSelectBubble': cmdSelectBubble,
@@ -241,8 +270,7 @@ const commands = {
 	'cmdFinishedGame': cmdFinishedGame,
 	'cmdRequestState': cmdRequestState,
 	'cmdContinueFromRewardScene' : cmdContinueFromRewardScene,
-	'cmdSelectedCertainty' : cmdSelectedCertainty,
-	'cmdLogin': cmdLogin
+	'cmdSelectedCertainty' : cmdSelectedCertainty
 };
 
 function init(serverInstance){
@@ -257,6 +285,7 @@ function init(serverInstance){
 	netframe.shouldLog(true); // stop logging
 	netframe.addUpdateCallback(update); // add update callback
 	netframe.addClientConnectedCallback(clientConnected); // add client connected callback
+	netframe.addClientLoggedInCallback(clientLoggedIn)
 	netframe.startLoop(10); // start server update with X ms interval - stop again with stopLoop()
 
 	initData();
@@ -271,17 +300,39 @@ function init(serverInstance){
 function update(){}
 
 // Gets called from netframe when a client has joined a stage
-function clientConnected(client, networkIdentity){
+function clientConnected(client){
 	netframe.log('clientConnected() callback called on server-controller with clientId: ' + client + ', and networkworkId: ' + JSON.stringify(networkIdentity));
 
 	// make initial state for client
-	let stateObj = createInitState(networkIdentity);
-	setStateOfNetworkIdentity(networkIdentity, stateObj.state, stateObj.stateData, false);
+	//let stateObj = createInitState(networkIdentity);
+	//setStateOfNetworkIdentity(networkIdentity, stateObj.state, stateObj.stateData, false);
 
+}
 
-	//netframe.getServer().send('printEntities', Object.values(netframe.getNetworkIdentities())).toAdmin();
+function clientLoggedIn(networkIdentity, password){
+	netframe.log('clientLoggedIn() called with networkIdentity: ' + JSON.stringify(networkIdentity) + ', password: ' + password);
+
+	netframe.log('Logged in users: ' + JSON.stringify(netframe.getLoggedInUsers()));
 	
+	let clients = [];
 	
+	let loggedInNetworkIdentities = netframe.getLoggedInUsers();
+	for(let key in loggedInNetworkIdentities){
+		clients.push(loggedInNetworkIdentities[key].clientId);
+	}
+
+	let msg = {
+		clients : clients
+	}
+
+	netframe.getServer().send('clientLogin', msg).toAdmin();
+
+	let stateData = {
+		
+	}
+	setStateOfNetworkIdentity(networkIdentity, NetworkStates.LOBBY, stateData);
+
+	StartGameIfReady();
 }
 
 function StartGameIfReady(){

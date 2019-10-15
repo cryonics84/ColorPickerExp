@@ -36,6 +36,14 @@ let commands = {
         console.log('reqParticipantData command received on server..');
         serverController.sendParticipantData();
     },
+    'reqSaveConnections': function (server, _, ...data) {
+        console.log('Recieved reqSaveConnections msg with data: ' + JSON.stringify(data));
+        serverController.saveConnections(data[0]);
+    },
+    'reqLoadConnections': function (server, _, ...data) {
+        console.log('Recieved reqLoadConnections msg...');
+        serverController.loadConnections();
+    },
 }
 
 //localhost:8080/admin?key=sEcr3t

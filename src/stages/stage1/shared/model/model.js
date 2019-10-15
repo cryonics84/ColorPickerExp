@@ -1,10 +1,3 @@
-import compose from 'lodash/fp/compose';
-
-import modelController from '../controller/controller';
-import {NetworkIdentity} from '../../lib/entity';
-import {Mixin, mix} from '../../lib/mixwith';
-import  {sharedInterface as netframe} from '../../lib/netframe';
-import view from '../../client/client-view';
 
 let callbacks;
 
@@ -48,38 +41,11 @@ class GameManager {
 		this.numberOfRandomScores = 1;
 		this.scoreMultiplier = 0.05;
 		this.finalScore = 0;
-		this.crossTableClientData;
+		this.crossTableClientData = [];
 
-		
+
 	}
 
-	getVisibleNetworkIdentitiesOfClientId(clientId) {
-		netframe.log('getVisibleNetworkIdentitiesOfClientId() called on GameManger');
-		let visibleNetworkIdentities = [];
-		
-		netframe.log('Logging crossTableClientData: ' + JSON.stringify(this.crossTableClientData));
-
-		let visibleClients = [];
-		for(let i=0, clientData; clientData = this.crossTableClientData[i]; i++){
-			netframe.log(' Comparing clientData.client: ' + clientData.client + ', with clientId: ' + clientId);
-			if(clientData.client === clientId){
-				netframe.log('client found...');
-				visibleClients = clientData.visibleClients;
-				break;
-			}
-		}
-
-		netframe.log('visibleClients: ' + visibleClients);
-
-		
-		for(let i = 0, visibleClient; visibleClient = visibleClients[i]; i++){
-			if(visibleClient !== ''){
-				let networkIdentity = netframe.getNetworkIdentityFromClientId(visibleClient);
-				visibleNetworkIdentities.push(networkIdentity);
-			}
-		}
-		return visibleNetworkIdentities;
-	};
 }
 
 

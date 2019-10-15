@@ -6,7 +6,7 @@ import {Events} from 'monsterr'
 import {NetworkIdentity, ConnectionStates} from "./entity";
 import Entity from "./entity";
 import modelController from '../shared/controller/controller'
-
+import * as db from '../../sharedDB';
 /**---------------------------------------------------------------
 | Server variables
 ----------------------------------------------------------------*/
@@ -14,6 +14,7 @@ let server;
 let networkIdentityIdCounter = 0;
 let intervalId = -1;
 let rpcBuffer = [];
+let identiyIdCounter = 0;
 
 // Callbacks
 let updateCallbacks = [];
@@ -159,7 +160,8 @@ function clientConnected(client){
     if(!networkIdentity){
         // Client needs new network identity
         log('New client');
-        let networkId = server.getPlayers().findIndex(player => player === client);
+        //let networkId = server.getPlayers().findIndex(player => player === client);
+        
         let networkIdentity = createNetworkIdentity(client, networkId);
 
         //log('Sending GameState to client...');
@@ -175,29 +177,46 @@ function clientConnected(client){
 
 function clientLoggedIn(clientId, password){
     log('clientLoggedIn() called with : ' + clientId + ' and ' + password);
+
     //Check if networkIdentity exists
     let networkIdentity = Object.values(networkIdentities).find(networkIdentity => networkIdentity.password === password);
 
     if(networkIdentity){
-        //Override existing clientId
-        networkIdentity.clientId = clientId;
-        log('Making clientLoggedIn backin callbacks...');
-        clientLoggedInCallbacks.forEach(callback => {callback(networkIdentity, networkIdentity)});
 
-    }else{
+        //Check if user is already logged in
+        if(networkIdentity.connectionState === ConnectionStates.DISCONNECTED){
+            //Override existing clientId
+            networkIdentity.clientId = clientId;
+            log('Making clientLoggedIn backin callbacks...');
+            clientLoggedInCallbacks.forEach(callback => {callback(networkIdentity, networkIdentity)});
+        }
+    }
+    else
+    {
+        //Check if password is valid
+        if(!db.isKeyValid(password)){
+            makeRPC('loginFailed', ['Incorrect Code. Try again.'], clientId);
+        }
+        else{
+            log('New client');
+            //let networkId = server.getPlayers().findIndex(player => player === clientId);
+            let identityId = identiyIdCounter;
+            identiyIdCounter += 1;
 
-        log('New client');
-        let networkId = server.getPlayers().findIndex(player => player === clientId);
-        let networkIdentity = createNetworkIdentity(clientId, networkId);
+            let networkIdentity = createNetworkIdentity(clientId, identityId);
+            
+            networkIdentity.password = password;
     
-        networkIdentity.password = password;
-
-        //log('Sending GameState to client...');
-        //sendGameStateToClient(client, getSerializedGameState());
-    
-        //Do server callback last
-        log('Making clientLoggedInCallbacks callbacks...');
-        clientLoggedInCallbacks.forEach(callback => {callback(networkIdentity, networkIdentity)});
+            //log('Sending GameState to client...');
+            //sendGameStateToClient(client, getSerializedGameState());
+        
+            //Do server callback last
+            log('Making clientLoggedInCallbacks callbacks...');
+            clientLoggedInCallbacks.forEach(callback => {
+                callback(networkIdentity, networkIdentity)
+            });
+        }
+        
     }
 
     
@@ -245,6 +264,8 @@ function getNetworkID(){
     log('Returning ID: ' + id);
     return id;
 }
+
+
 
 function createNetworkIdentity(client, id){
     let randomName = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);

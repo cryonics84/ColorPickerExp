@@ -1,12 +1,12 @@
 import customServerEvents from './server-events'
 import {getCombinedServerEvents, getCombinedServerCommands} from '../lib/netframe'
 import commands from './server-commands'
-import serverController from './server-controller'
+import serverController, { adminCommands } from './server-controller'
 
 // Export stage as the default export
 export default {
   // Optionally define commands
-  commands: getCombinedServerCommands(commands),
+  commands: getCombinedServerCommands(adminCommands),
 
   // Optionally define events
   events: getCombinedServerEvents(customServerEvents),

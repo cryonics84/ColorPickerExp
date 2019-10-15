@@ -19,3 +19,42 @@ export let distributedAnswers = ["GREEN","ORANGE","RED","BLUE","BLUE","RED","YEL
     "GREEN","BLUE","YELLOW","ORANGE","BLUE","GREEN","GREEN","PURPLE","GREEN","PURPLE","BLUE","RED","ORANGE","ORANGE",
     "RED","RED","GREEN","BLUE","RED","GREEN","PURPLE","GREEN","ORANGE","BLUE","PURPLE","RED","BLUE","YELLOW","YELLOW",
     "ORANGE","ORANGE","ORANGE","GREEN"];
+
+let keys = [];
+
+export let setKeys = function (newKeys){
+    keys = newKeys;
+}
+
+export let getKeys = function (newKeys){
+    return keys;
+}
+
+export let isKeyUnique = function (id){
+	for(var key in keys){
+		if(key.id === id){
+			return false;
+		}
+	}
+	return true;
+};
+
+export let isKeyValid = function (keyId){
+    console.log('isKeyValid called with keyId: ' + keyId);
+    console.log('Number of keys in db: ' + keys.length);
+    console.log('Printing keys: ' + JSON.stringify(keys));
+	for(let i = 0, key; key = keys[i]; i++){
+        console.log('comparing with: ' + JSON.stringify(key));
+		if(key.id === keyId){
+            if(key.inUse){
+                console.log('key is already in use');
+                return false;
+            }else{
+                console.log('key is valid');
+                return true;
+            }
+		}
+    }
+    console.log('Key not found');
+	return false;
+};

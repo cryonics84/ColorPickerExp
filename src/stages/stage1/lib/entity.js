@@ -31,6 +31,9 @@ export class NetworkIdentity {
 		this.isReady = false;
 
         this.connectionState = ConnectionStates.CONNECTED;
+
+        this.playerId = -1;
+        this.visibleClients = [];
 	}
 }
 

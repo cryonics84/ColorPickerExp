@@ -1,11 +1,14 @@
 /* globals $ */
+//let fs = require('fs');
+import fs from 'fs';
+
 import createClient from 'monsterr'
 
 import html from './src/admin-client.html'
 import './src/admin-client.css'
 //import {gameSettings} from "./src/stages/sharedDB";
 import * as db from "./src/stages/sharedDB";
-import * as adminContent from './src/adminHTML.html'
+import * as adminContent from './src/adminHTML.html';
 
 
 
@@ -74,9 +77,13 @@ let events = {
     },
     'clientLogin': function (admin, data) {
         console.log('Received clientLogin event from server with data: ' + JSON.stringify(data));
-        //clientLogin(data.clientId, password);
         updatePlayerList(data.clients);
     },
+    'resLoadConnections': function (admin, data) {
+        console.log('Received resLoadConnections event from server with data: ' + JSON.stringify(data));
+        loadConnectionsFromFile(data);
+    },
+    
 };
 let commands = {};
 
@@ -115,13 +122,33 @@ function insertHTML(){
     });
 
     $('#button-gameData').mouseup(e => {
-        e.preventDefault()
+        e.preventDefault();
         requestGameData();
     });
 
     $('#button-participantData').mouseup(e => {
-        e.preventDefault()
+        e.preventDefault();
         requestParticipantData();
+    });
+
+    $('#btnSettings').mouseup(e => {
+        e.preventDefault();
+        showSettings();
+    });
+
+    $('#btnConnections').mouseup(e => {
+        e.preventDefault();
+        showConnections();
+    });
+
+    $('#btnSaveConnections').mouseup(e => {
+        e.preventDefault();
+        writeConnectionsToFile();
+    });
+
+    $('#btnLoadConnections').mouseup(e => {
+        e.preventDefault();
+        getConnectionsFromServerFile();
     });
 
     hideStuff();
@@ -129,7 +156,7 @@ function insertHTML(){
     //admin.sendCommand('getLoggedInUsers');
 
     console.log('making cross table');
-    crossTableAmount = 15;
+    crossTableAmount = 10;
     createCrossTable(crossTableAmount);
 
 
@@ -196,7 +223,8 @@ function startGame(){
     //admin.sendCommand('start');
     admin.sendCommand('setGameSettings', [maxRounds, gameMode, networkMode, getCrossTableClients().clientDataArr]);
 
-    
+    admin.sendCommand('startGame');
+
 }
 
 function updateRounds(roundArr){
@@ -211,6 +239,21 @@ function download(content, fileName, contentType) {
     a.click();
 }
 
+function updatePlayerList(clients){
+    console.log('updatePlayerList() called with: ' + clients);
+    let ul = document.getElementById("playerList");
+
+    ul.innerHTML = "";
+
+    for(let clientIndex in clients){
+        let li = document.createElement("li");
+        li.appendChild(document.createTextNode(clients[clientIndex]));
+        ul.appendChild(li);
+    }
+
+    //createCrossTable(clients);
+}
+/*
 function updatePlayerList(clients){
     console.log('updatePlayerList() called with: ' + clients);
     let ul = document.getElementById("playerList");
@@ -233,7 +276,7 @@ function updatePlayerList(clients){
 
     //createCrossTable(clients);
 }
-
+*/
 function gameOver(){
     $('#gameOver').show();
 
@@ -425,7 +468,61 @@ function setStyle(element, style){
     element.setAttribute('style', style);
 }
 
+function setCrossTableClients(clientDataArr){
+    console.log('setCrossTableClients() called');
+    
+    console.log('i length: ' + clientDataArr.length);
 
+    for (let i = 0; i < clientDataArr.length; i++) {
+        console.log('i: ' + i);
+        for (let j = 0; j < clientDataArr[i].length; j++) {
+            console.log('j: ' + j);
+            console.log('content: ' + clientDataArr[i][j]); 
+            
+            let cell = Number(clientDataArr[i][j]);
+            
+            crossTable.rows[i+1].cells[cell].innerHTML = 'x';
+        }
+        
+    }
+    
+}
+
+function getCrossTableClients(){
+    console.log('getCrossTableClients() called');
+
+    let clientDataArr = [];
+
+    for (var i = 1, clientColumnCell; clientColumnCell = crossTable.rows[0].cells[i]; i++) {
+        //iterate through rows
+        //console.log('Iterating i: ' + i + ', clientColumnCell: ' + clientColumnCell);
+
+        //let client =  i;
+        let visibleClients = [];
+        
+        for (var j = 1, visibleClientIndex; visibleClientIndex = crossTable.rows[i].cells[j]; j++) {
+            //get visible clients from row
+            //console.log('Iterating j: ' + j + ', visibleClientIndex: ' + visibleClientIndex);
+
+            let isVisible = visibleClientIndex.innerHTML === 'x' ? true : false;
+            
+            if(isVisible){
+                visibleClients.push(j);
+            }
+        }
+
+        //let clientData = new ClientData(client, visibleClients)
+        clientDataArr.push(visibleClients);
+     }
+
+     let crossTableClients = new CrossTableClients(clientDataArr);
+     
+     console.log('Created crossTableClients: ' + JSON.stringify(crossTableClients));
+
+     return crossTableClients;
+}
+
+/*
 function getCrossTableClients(){
     console.log('getCrossTableClients() called');
 
@@ -448,9 +545,6 @@ function getCrossTableClients(){
                 let visibleClient =  crossTable.rows[0].cells[j].innerHTML;
                 visibleClients.push(visibleClient);
             }
-
-            
-
         }
 
         let clientData = new ClientData(client, visibleClients)
@@ -464,6 +558,7 @@ function getCrossTableClients(){
 
      return crossTableClients;
 }
+*/
 
 class ClientData
 {
@@ -480,4 +575,36 @@ class CrossTableClients
     {
         this.clientDataArr = clientDataArr;
     }
+}
+
+function showSettings(){
+    console.log("Show Settings...");
+    $('#settingsTab').show();
+    $('#connectionsTab').hide();
+}
+
+function showConnections(){
+    console.log("Show Connections...");
+    $('#settingsTab').hide();
+    $('#connectionsTab').show();
+}
+
+
+function writeConnectionsToFile(){
+    console.log('writeConnectionsToFile() called');
+    let connections = getCrossTableClients();
+    //let connectionsJSON = JSON.stringify(connections);
+    console.log('Sending connections to server..');
+    
+    admin.sendCommand('reqSaveConnections', [connections]);
+}
+
+
+function loadConnectionsFromFile(connections){
+    console.log("loadConnectionsFromFile() with connections: " + JSON.stringify(connections));
+    setCrossTableClients(connections.clientDataArr);
+}
+
+function getConnectionsFromServerFile(){
+    admin.sendCommand('reqLoadConnections');
 }

@@ -8,6 +8,9 @@ import * as db from '../../sharedDB';
 import { NetworkStates } from '../lib/entity';
 import { Network } from 'monsterr';
 
+import { inspect } from 'util' ;
+import { start } from 'repl';
+
 let fs = require('fs');
 // ---------------------------------------------------------------
 // Variables
@@ -30,7 +33,7 @@ function cmdSelectBubble (bubbleIdGuess, clientId, mouseData) {
 	let identity = netframe.getNetworkIdentityFromClientId(clientId);
 	let playerIndex;
 
-	if(!db.gameSettings.networkMode){
+	if(!modelController.getGameManager().networkMode){
 		playerIndex = identity.identityId;
 	}else{
 		playerIndex = 0;
@@ -74,7 +77,9 @@ function cmdSelectBubble (bubbleIdGuess, clientId, mouseData) {
 	netframe.log('Logging GameManager: ' + JSON.stringify(modelController.getGameManager()));
 	netframe.log('Rounds in GameManager: ' + modelController.getGameManager().round + '. Client IdentityID: ' + identity.identityId);
 
-	netframe.log('Round: ' + round + ', for player id index: ' + playerIndex);
+    netframe.log('Round: ' + round + ', for player id index: ' + playerIndex);
+    
+    netframe.log('adding bubbleSceneData to gameData: ' + JSON.stringify(gameData));
 	gameData.roundData[round].participantRoundData[identity.identityId].bubbleSceneData.push(bubbleSceneData);
 
 	netframe.log('Saved game data: ' + JSON.stringify(gameData));
@@ -91,10 +96,9 @@ function cmdSelectBubble (bubbleIdGuess, clientId, mouseData) {
 function cmdContinueFromRewardScene(clientId){
 	netframe.log('cmdContinueFromRewardScene() was called');
 	
+	netframe.log('is networkmode: ' + modelController.getGameManager().networkMode );
 
-	netframe.log('is networkmode: ' + db.gameSettings.networkMode );
-
-	if(db.gameSettings.networkMode){
+	if(modelController.getGameManager().networkMode){
 		
 		let networkIdentity = netframe.getNetworkIdentityFromClientId(clientId);
 		networkIdentity.isReady = true;
@@ -112,29 +116,56 @@ function cmdContinueFromRewardScene(clientId){
 
 				//Send to clients
 				for(let i in networkIdentities){
-
-					networkIdentity = networkIdentities[i];
+                    networkIdentity = networkIdentities[i];
+                    netframe.log('Iterating networkIdentity ID: ' + networkIdentity.identityId);
 					networkIdentity.isReady = false;
 
 					let networkIdentitiesData = [];
 	
-					let visibleNetworkIdentities = modelController.getGameManager().getVisibleNetworkIdentitiesOfClientId(networkIdentity.clientId);
+					//let visibleNetworkIdentities = modelController.getGameManager().getVisibleNetworkIdentitiesOfClientId(networkIdentity.clientId);
+                    
+                    let visibleNetworkIdentities = [];
+                    netframe.log('Visible IDs of this client: ' + networkIdentity.visibleClients);
 
-	
+                    
+                    for(let j in networkIdentities){
+                        let ni = networkIdentities[j];
+                        netframe.log('Checking if user with ID: ' + ni.identityId + '(+1), is included in visibleClients');
+                        // + 1 because the crosstable does not account for 0 arr index
+                        for(let j in networkIdentity.visibleClients){
+                            
+                            let visibleClientId = networkIdentity.visibleClients[j];
+                            netframe.log('Checking visibleClientId: ' + visibleClientId);
+                            if(visibleClientId == (ni.identityId +1)){
+                                netframe.log('match found');
+                                visibleNetworkIdentities.push(ni);
+                            }
+                        }
+                    }
+/*
+                    netframe.getLoggedInUsers().forEach(user => {
+                        netframe.log('Checking if user with ID: ' + user.identityId + '(+1), is included in visibleClients');
+                        // + 1 because the crosstable does not account for 0 arr index
+                        if(networkIdentity.visibleClients.includes(user.identityId + 1)){
+                            visibleNetworkIdentities.push(user);
+                        }
+                    });*/
+                    
+                    netframe.log('Found: ' + visibleNetworkIdentities.length + ', networkidentities matching..');
+
 					//Create struct
-					for(let i in visibleNetworkIdentities){
+					for(let j in visibleNetworkIdentities){
 						
+						let visibleNetworkIdentity = visibleNetworkIdentities[j];
+                        netframe.log('itertaing visibleNetworkIdentity id: ' + visibleNetworkIdentity.identityId);
+
 						let data = {
-							'identityId' : visibleNetworkIdentities[i].identityId,
-							'clientId' : visibleNetworkIdentities[i].clientId,
-							'lastScore' : visibleNetworkIdentities[i].lastScore,
-							'selectedBubble' : visibleNetworkIdentities[i].selectedBubble
+							'identityId' : visibleNetworkIdentity.identityId,
+							'clientId' : visibleNetworkIdentity.clientId,
+							'lastScore' : visibleNetworkIdentity.lastScore,
+							'selectedBubble' : visibleNetworkIdentity.selectedBubble
 						};
 
-						networkIdentitiesData.push(data);
-						networkIdentitiesData.push(data);
-						networkIdentitiesData.push(data);
-						networkIdentitiesData.push(data);
 						networkIdentitiesData.push(data);
 						
 					}
@@ -143,6 +174,7 @@ function cmdContinueFromRewardScene(clientId){
 						'networkIdentitiesData' : networkIdentitiesData
 					}
 
+                    netframe.log('Sending network state to networkIdentity ID: ' + networkIdentity.identity + ', with stateData:\n' + JSON.stringify(stateData));
 					setStateOfNetworkIdentity(networkIdentity, NetworkStates.SOCIAL, stateData);
 				}
 			}
@@ -195,10 +227,13 @@ function cmdSelectParticipant(clientId, selectedParticipants, mouseData){
 }
 
 function cmdFinishedGame(canvasSize, clientId){
-	netframe.log('cmdFinishedGame() called with: ' + JSON.stringify(arguments));
+    netframe.log('cmdFinishedGame() called with: ' + JSON.stringify(arguments));
+
+    //netframe.log('logging all participants.. ' + JSON.stringify(db.participants));
+
 	//Find participant
-	let participant = db.participants.find(participant => participant.id === clientId);
-	participant.resolution = canvasSize;
+	//let participant = db.participants.find(participant => participant.id === identityId);
+	//participant.resolution = canvasSize;
 
 	let networkIdentity = netframe.getNetworkIdentityFromClientId(clientId);
 	networkIdentity.isReady = true;
@@ -212,7 +247,7 @@ function cmdRequestState(clientId){
 	netframe.log('cmdRequestState() was called with clientId: ' + clientId);
 	let networkIdentity = netframe.getNetworkIdentityFromClientId(clientId);
 	if(networkIdentity){
-		sendCurrentNetworkIdentityState();
+		sendCurrentNetworkIdentityState(networkIdentity);
 	}else{
 
 		let stateObj = {
@@ -270,7 +305,8 @@ const commands = {
 	'cmdFinishedGame': cmdFinishedGame,
 	'cmdRequestState': cmdRequestState,
 	'cmdContinueFromRewardScene' : cmdContinueFromRewardScene,
-	'cmdSelectedCertainty' : cmdSelectedCertainty
+    'cmdSelectedCertainty' : cmdSelectedCertainty,
+    
 };
 
 function init(serverInstance){
@@ -288,9 +324,9 @@ function init(serverInstance){
 	netframe.addClientLoggedInCallback(clientLoggedIn)
 	netframe.startLoop(10); // start server update with X ms interval - stop again with stopLoop()
 
-	initData();
+	//initData();
 
-
+	loadKeys();
 
 	//createUniformAnswers();
 	//createDistributedAnswers();
@@ -314,25 +350,54 @@ function clientLoggedIn(networkIdentity, password){
 
 	netframe.log('Logged in users: ' + JSON.stringify(netframe.getLoggedInUsers()));
 	
-	let clients = [];
-	
-	let loggedInNetworkIdentities = netframe.getLoggedInUsers();
-	for(let key in loggedInNetworkIdentities){
-		clients.push(loggedInNetworkIdentities[key].clientId);
-	}
-
-	let msg = {
-		clients : clients
-	}
-
-	netframe.getServer().send('clientLogin', msg).toAdmin();
-
-	let stateData = {
+		let clients = [];
 		
-	}
-	setStateOfNetworkIdentity(networkIdentity, NetworkStates.LOBBY, stateData);
+		let loggedInNetworkIdentities = netframe.getLoggedInUsers();
+		for(let key in loggedInNetworkIdentities){
+			clients.push(loggedInNetworkIdentities[key].password);
+		}
+	
+		let msg = {
+			clients : clients
+		}
+	
+		netframe.getServer().send('clientLogin', msg).toAdmin();
+	
+		let stateData = {
+			
+		}
+		setStateOfNetworkIdentity(networkIdentity, NetworkStates.LOBBY, stateData);
+	
+		
 
-	StartGameIfReady();
+	
+}
+
+function generateKey(){
+	let key = Math.random().toString(36).substr(2, 9);
+
+	while(!db.isKeyUnique(key)){
+		netframe.log('Key collision found! Trying new key...');
+		key = Math.random().toString(36).substr(2, 9);
+	}
+
+	return key;
+}
+
+
+
+function requestNewKeys(amount){
+	let keys = db.getKeys();
+	for(let i = 0; i < amount; i++){
+		let key = {
+			'id': generateKey(),
+			'inUse' : false
+		};
+		keys.push(key);
+	}
+	db.setKeys(keys);
+	netframe.log('Generated Keys: ' + inspect(keys));
+	return keys;
 }
 
 function StartGameIfReady(){
@@ -380,7 +445,7 @@ function isAllReady(){
 
 function createInitState(networkIdentity){
 
-	let round = db.gameSettings.networkMode ? 0 : networkIdentity.identityId;
+	let round = modelController.getGameManager().networkMode ? 0 : networkIdentity.identityId;
 
 	let stateObj = {
 		'state': NetworkStates.LOGIN,
@@ -396,11 +461,10 @@ function createInitState(networkIdentity){
 }
 
 function setStateOfNetworkIdentity(networkIdentity, state, stateData, shouldSendState = true){
+    netframe.log('setStateOfNetworkIdentity() called with arguments:\n' + JSON.stringify(arguments));
 
 	networkIdentity.state = state;
 	networkIdentity.stateData = stateData;
-
-	netframe.log('test...\n' + JSON.stringify(netframe.getNetworkIdentities()));
 
 	if(shouldSendState){
 		sendCurrentNetworkIdentityState(networkIdentity);
@@ -408,6 +472,7 @@ function setStateOfNetworkIdentity(networkIdentity, state, stateData, shouldSend
 }
 
 function sendCurrentNetworkIdentityState(networkIdentity){
+    netframe.log('sendCurrentNetworkIdentityState() called with NI:\n' + JSON.stringify(networkIdentity));
 
     let stateObj = {
 		'state': networkIdentity.state,
@@ -445,11 +510,17 @@ function sendCurrentNetworkIdentityState(networkIdentity){
 function startRound(clientId){
 	netframe.log('Starting round...');
 
-	saveToDisk(JSON.stringify(gameData));
-	saveToDiskParticipants(JSON.stringify(db.participants));
+    
+    let stringGameData = JSON.stringify(gameData);
+    netframe.log('Stringified GameData: ' + stringGameData);
+    let stringParticipants = JSON.stringify(db.participants);
+    netframe.log('Stringified Participants: ' + stringParticipants);
+
+	saveToDisk(stringGameData);
+	saveToDiskParticipants(stringParticipants);
 
 	//If passed clientId then only start round for that client, else for everyone
-	if(!db.gameSettings.networkMode){
+	if(!modelController.getGameManager().networkMode){
 		netframe.log('Single mode');
 
 		if(clientId){
@@ -474,12 +545,15 @@ function startRound(clientId){
             
 		}else{
 			let networkIdentities = Object.values(netframe.getNetworkIdentities());
-			netframe.log('Starting solo round for all clients: ' + networkIdentities);
+			netframe.log('Starting solo round for all clients (' + networkIdentities.length + ')');
 
+            netframe.log('Starting IndiviualRound on each NetworkIdentity...');
 			for(let identityIndex in networkIdentities){
+                netframe.log('Iterating identityIndex: ' + identityIndex + ' / ' + networkIdentities.length);
 				let networkIdentity = networkIdentities[identityIndex];
 				let id = networkIdentity.identityId;
-				modelController.getGameManager().round[id] = modelController.getGameManager().round[id] + 1;
+                modelController.getGameManager().round[id] = modelController.getGameManager().round[id] + 1;
+                netframe.log('Round: ' + modelController.getGameManager().round[id]);
 				_startIndiviualRound(networkIdentity, modelController.getGameManager().round[id]);
 
 				/*
@@ -489,7 +563,9 @@ function startRound(clientId){
                 netframe.makeRPC('startRound', [id, modelController.getGameManager().round[id]], networkIdentity.clientId);
                 */
 
+                netframe.log('Checking if id has hint..');
 				if(networkIdentity.hasHint){
+                    netframe.log('ID has hint, adding Hint');
 					netframe.makeRPC('addHint', [], networkIdentity.clientId);
 				}
 
@@ -513,10 +589,12 @@ function startRound(clientId){
 		//netframe.getServer().send('updateRounds', modelController.getGameManager().round[0]).toAdmin();
 	}
 
+    netframe.log('Sending updateRounds to Admin');
 	netframe.getServer().send('updateRounds', modelController.getGameManager().round).toAdmin();
 }
 
 function _startIndiviualRound(networkIdentity, round){
+    netframe.log('_startIndiviualRound() called with arguments:\n' + JSON.stringify(arguments));
 	//Increase round
 
 	//Send RPC
@@ -534,18 +612,9 @@ function initData(){
 	netframe.log('initData() called on server');
 	setAnswers();
 
-	/*
-    let participantDataArr = {};
-
-    for(let identity in Object.values(netframe.getNetworkIdentities)){
-        let participantData = new dataClasses.ParticipantData(identity.identityId, 0, 'male', 0);
-        participantDataArr[identity.identityId] = participantData;
-    }*/
-
-	gameData = new dataClasses.GameData(db.uniformAnswers, db.distributedAnswers, db.gameSettings.maxPlayers, db.gameSettings.maxRounds, db.gameSettings.gameMode, [], null);
+    netframe.log('Creating GameData...');
+	gameData = new dataClasses.GameData(db.uniformAnswers, db.distributedAnswers, modelController.getGameManager().maxPlayers, modelController.getGameManager().maxRounds, modelController.getGameManager().gameMode, [], null);
 	netframe.log('Created GameData: ' + JSON.stringify(gameData));
-
-	createGameManager();
 
 	let moneyGroups = modelController.getGameManager().moneyGroups.map(moneyGroup => moneyGroup.value);
 	netframe.log('Adding money groups to gameData: ' + moneyGroups);
@@ -553,31 +622,46 @@ function initData(){
 
 }
 
-function createGameManager(){
+function createGameManager(maxRounds, gameMode, networkMode, crossTableClientData){
+    netframe.log('createGameManager() called');
+
 	let manager = modelController.createGameManager();
 
-	let players = netframe.getServer().getPlayers();
-	netframe.log('Setting round of each networkIdentity. Number of Identities: ' + players.length);
+    
+	manager.maxRounds = maxRounds;
+	manager.gameMode = gameMode;
+	manager.networkMode = networkMode;
+	manager.crossTableClientData = crossTableClientData;
 
-	for(let playerIndex in players){
-		netframe.log('Setting round of player: ' + players[playerIndex]);
-		manager.round[playerIndex] = 0;
-	}
+	let loggedInNetworkIdentities = netframe.getLoggedInUsers();
+	netframe.log('Setting round of each networkIdentity. Number of Identities: ' + loggedInNetworkIdentities.length);
 
-	
+    manager.maxPlayers = loggedInNetworkIdentities.length;
+
+	for(let loggedInNetworkIdentity in loggedInNetworkIdentities){
+		let networkIdentity = loggedInNetworkIdentities[loggedInNetworkIdentity];
+		netframe.log('Setting round of player: ' + networkIdentity.identityId);
+		manager.round[networkIdentity.identityId] = 0;
+    }
+    
+    //initiating data to create gameData obj
+    initData();
 
 	netframe.log('Creating Round Data...');
-	for(let round = 0; round < db.gameSettings.maxRounds; round++){
+	for(let round = 0; round < modelController.getGameManager().maxRounds; round++){
+        netframe.log('Adding round data for round: ' + round);
 		let roundData = new dataClasses.RoundData(round);
 		roundData.round = round;
 
 		netframe.log('Creating participantRoundData for round: ' + round);
-		for(let playerIndex in players){
-			netframe.log('Creating participantRoundData for: ' + players[playerIndex] + ', with index: ' + playerIndex);
-			let participantRoundData = new dataClasses.ParticipantRoundData(playerIndex, players[playerIndex], [], []);
+		for(let networkIdentityIndex in loggedInNetworkIdentities){
+			netframe.log('Creating participantRoundData for: ' + loggedInNetworkIdentities[networkIdentityIndex] + ', with index: ' + networkIdentityIndex);
+			let participantRoundData = new dataClasses.ParticipantRoundData(networkIdentityIndex, loggedInNetworkIdentities[networkIdentityIndex].clientId, [], []);
 			roundData.participantRoundData.push(participantRoundData);
 			netframe.log('Created ParticipantRoundData: ' + JSON.stringify(participantRoundData));
 		}
+
+        
 
 		netframe.log('Pushing RoundData: ' + JSON.stringify(roundData) +'\n on to gameData obj: ' + JSON.stringify(gameData));
 		gameData.roundData.push(roundData);
@@ -585,10 +669,10 @@ function createGameManager(){
 		netframe.log('Created Round Data: ' + JSON.stringify(roundData));
 	}
 
-	manager.maxPlayers = db.gameSettings.maxPlayers;
-	manager.maxRounds = db.gameSettings.maxRounds;
-	manager.gameMode = db.gameSettings.gameMode;
-	manager.crossTableClientData = db.gameSettings.crossTableClientData;
+	//manager.maxPlayers = modelController.getGameManager().maxPlayers;
+	//manager.maxRounds = modelController.getGameManager().maxRounds;
+	//manager.gameMode = modelController.getGameManager().gameMode;
+	//manager.crossTableClientData = modelController.getGameManager().crossTableClientData;
 
 	netframe.log('Created GameManager: ' + JSON.stringify(manager));
 
@@ -653,6 +737,8 @@ function setNumberOfRounds(amount){
 }
 
 function setAnswers(){
+    netframe.log('setAnswer() called');
+
 	switch (modelController.getGameManager().gameMode) {
 	case 'risky':
 		answers = db.uniformAnswers.slice(0);
@@ -867,8 +953,9 @@ function gameOver(isFinished, clientId){
 
 		//netframe.makeRPC('loadFinalScene', [finalScore], clientId);
 		let stateData = {
-			'finalScore' : finalScore
-		}
+            'finalScore' : finalScore,
+            'userId' : networkIdentity.password
+		};
 		setStateOfNetworkIdentity(networkIdentity, NetworkStates.FINISHED, stateData);
 
 	}else{
@@ -880,7 +967,7 @@ function gameOver(isFinished, clientId){
 
 			netframe.log('Saving client final score to gameData');
 			//Save score to gameData
-			gameData.finalScore.push({id: networkIdentity.clientId, score: finalScore});
+			gameData.finalScore.push({id: networkIdentity.clientId, score: finalScore, 'userId' : networkIdentity.password});
 
 			//netframe.makeRPC('loadFinalScene', [finalScore], networkIdentities[ni].clientId);
 			let stateData = {
@@ -904,6 +991,88 @@ function reset(){
 	netframe.makeRPC('reset', []);
 }
 
+
+function assignVisibleClients(){
+    netframe.log('assignVisibleClients() called');
+
+	let networkIdentities = netframe.getLoggedInUsers();
+
+	for(let i=0, ni; ni = networkIdentities[i]; i++){
+        //ni.visibleClients = getVisibleNetworkIdentitiesOfIdentityId(ni.identityId, networkIdentities);
+        ni.visibleClients = modelController.getGameManager().crossTableClientData[ni.identityId];
+	}
+}
+
+
+
+function getVisibleNetworkIdentitiesOfIdentityId(identityId, networkIdentities) {
+	netframe.log('getVisibleNetworkIdentitiesOfPlayerId() called with ' + JSON.stringify(arguments));
+    let visibleNetworkIdentities = [];
+
+    netframe.log('getGameManager().crossTableClientData:\n' + JSON.stringify(modelController.getGameManager().crossTableClientData));
+
+    let visibleClientArr = modelController.getGameManager().crossTableClientData[identityId];
+
+    netframe.log('identityId [' + identityId + '] - visibleClientArr: ' + JSON.stringify(visibleClientArr));
+
+	for(let i=0, visibleClientIndex; visibleClientIndex = visibleClientArr[i]; i++){
+
+		for(let j=0, ni; ni = networkIdentities[j]; j++){
+
+			if(visibleClientIndex === ni.identityId){
+				visibleNetworkIdentities.push(ni);
+			}
+		}
+	}
+
+    netframe.log('returning visibleNetworkIdentities: ' + JSON.stringify(visibleNetworkIdentities));
+	return visibleNetworkIdentities;
+};
+
+
+
+function loadKeys(){
+	fs.readFile('keys.json', function (err, data) {
+		if (err) throw err;
+
+		let keys = JSON.parse(data); 
+		db.setKeys(keys);
+		netframe.log('Loaded keys: ' + inspect(db.getKeys())); 
+	  });
+}
+
+function saveKeys(){
+	//fs.writeFile('gameData.json', gameDataJSON, 'utf8', finishedSaving);
+	fs.writeFileSync('keys.json', JSON.stringify(db.getKeys()));
+	netframe.log('Saved keys: ' + inspect(db.getKeys()));
+}
+
+
+function saveConnections(connections){
+    netframe.log('Writing connections to file <connections.json>');
+    fs.writeFile('connections.json', JSON.stringify(connections), 'utf8', saveConnectionsFinished);
+}
+
+function saveConnectionsFinished(){
+    netframe.log('Finished saving connections to file...');
+}
+
+function loadConnections(){
+    netframe.log('Reading connections from file <connections.json>');
+    fs.readFile('connections.json', function read(err, data) {
+		if (err) {
+			netframe.log('Error!!');
+			throw err;
+        }
+        
+        let connections = JSON.parse(data);
+
+		netframe.log('sending connections to admin: ' + JSON.stringify(connections));
+		netframe.getServer().send('resLoadConnections', connections).toAdmin();
+	});
+}
+
+
 //---------------------------------------------------------------
 
 // Server-controller interface - should in most cases contain init(), clientConnected() and Commands{}.
@@ -912,7 +1081,43 @@ const api = {
 	reset: reset,
 	sendGameData: sendGameData,
 	sendParticipantData: sendParticipantData,
-	commands: commands
+    commands: commands,
+    saveConnections: saveConnections,
+    loadConnections: loadConnections
 };
+
+export const adminCommands = {
+    'setGameSettings': function (server, _, ...data) {
+        console.log('Received setGameSettings with args: ' + JSON.stringify(data));
+        //modelController.getGameManager().maxRounds = Number(data[0]);
+        //modelController.getGameManager().gameMode = data[1];
+        //modelController.getGameManager().networkMode = data[2] === 'multi';
+        //modelController.getGameManager().crossTableClientData = data[3];
+
+		let maxRounds = Number(data[0]);
+		let gameMode = data[1];
+		let networkMode = data[2] === 'multi';
+		let crossTableClientData = data[3];
+		
+		//Order is important!
+		
+        createGameManager(maxRounds, gameMode, networkMode, crossTableClientData);
+        assignVisibleClients();
+        //called from createGameManager instead
+        //initData();
+		
+		
+	},
+	'requestKeys' : function (server, _, ...data) {
+		//netframe.getServer().send('respondKeys', requestKeys(data[0]).toAdmin);
+		let amount = data[0];
+		requestNewKeys(amount);
+		saveKeys();
+
+	},
+	'startGame' : function (server, _, ...data) {
+		StartGameIfReady();
+	}
+}
 
 export default api;

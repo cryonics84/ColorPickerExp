@@ -17,7 +17,8 @@ const rpcs = {
     loadFinalScene: loadFinalScene,
     reset: reset,
     addHint: addHint,
-    updateState: updateState
+    updateState: updateState,
+    loginFailed: loginFailed
 };
 
 //---------------------------------------------------------------
@@ -91,8 +92,10 @@ function updateState(stateObj){
 		break;
 	case NetworkStates.WAITINGFORSOCIAL:
         setWaitingForSocial();
+        break;
     case NetworkStates.LOGIN:
         setLoginState(stateObj.stateData);
+        break;
     default :
         netframe.log('failed to find NetworkState');
         break;
@@ -102,6 +105,7 @@ function updateState(stateObj){
 }
 
 function setLoginState(stateData){
+    netframe.log('setLoginState() was called');
     view.loadLogin();
 }
 
@@ -128,7 +132,7 @@ function setRewardState(stateData){
 }
 
 function setFinishedState(stateData){
-    view.loadFinalScene(stateData.finalScore);
+    view.loadFinalScene(stateData.finalScore, stateData.userId);
 }
 
 function setWaitingForSocial(){
@@ -142,6 +146,11 @@ function playerSelectBubble(bubbleIdGuess, colorAnswer, money, clientId){
         view.loadRewardScene(bubbleIdGuess, colorAnswer, money);
     }
 }
+
+function loginFailed(errorMsg){
+    view.loginFailed(errorMsg);
+}
+
 /*
 function startRound(currentRound){
     netframe.log('startRound() called in clientController');
@@ -158,9 +167,9 @@ function loadSocialScene(){
     view.loadSocialScene();
 }
 
-function loadFinalScene(score){
-    netframe.log('loadFinalScene() called on clientController');
-    view.loadFinalScene(score);
+function loadFinalScene(score, userId){
+    netframe.log('loadFinalScene() called on clientController with args: ' + arguments);
+    view.loadFinalScene(score, userId);
 }
 
 function reset(){

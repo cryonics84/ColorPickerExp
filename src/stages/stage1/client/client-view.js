@@ -138,11 +138,11 @@ function _zoomCanvas(factorX, factorY) {
     canvas.calcOffset();
 }
 
-function setReadyTextVisibility(isVisible, btnCallback, content, posX, posY){
+function setReadyTextVisibility(isVisible, btnCallback, content, posX, posY, fontSize = 50){
     netframe.log('Setting ready group visibility: ' + isVisible);
     if(isVisible){
         let readyText = createText(content, {x: posX, y: posY -50, originX: 'center',
-            originY: 'center'}, 'black', 50);
+            originY: 'center'}, 'black', fontSize);
         let circleRadius = 10;
 
         //let readyCircle = createBandView(-1, centerPoint.x, centerPoint.y,circleRadius,1,'white','black');
@@ -262,8 +262,17 @@ function enableTracking(){
 function loadLobby(round, maxRound, numberOfPlayers, maxPlayers){
     netframe.log('loadLobby called() on view');
     //currentState = State.Lobby;
+
+    if(loginPasswordObj){
+        loginPasswordObj.exitEditing();
+        loginPasswordObj = null;
+        //canvas.deactivateAll().renderAll();
+    }
+    
+
     canvas.clear();
-    let text = createText('Succesful Login\nWaiting for game to start...\n')
+    let text = createText('Succesful Login\nWaiting for game to start...\n', {x: centerPoint.x, y: centerPoint.y, originX: 'center', originY: 'center'}, 'black', 40);
+    addToCanvas(text);
     //createGUI();
     //updateGUI(numberOfPlayers, maxPlayers);
     //drawRoundNumber(round, maxRound);
@@ -344,15 +353,20 @@ function loadRewardScene(selectedBubble, money){
     }else{
         moneyContent = 'You guessed wrong! You lost: ' + (money).toString();// +'\nYour total: ' + netframe.getMyNetworkIdentity().totalScore;
     }
-    let moneyText = createText(moneyContent, {x: centerPoint.x, y: centerPoint.y + 200, originX: 'center', originY: 'center'}, 'black', 45);
+
+    let moneyTextColor = (money > 0) ? 'green' : 'red';
+
+    let moneyText = createText(moneyContent, {x: centerPoint.x, y: (centerPoint.y / 2), originX: 'center', originY: 'center'}, moneyTextColor, 45);
     addToCanvas(moneyText);
 
     //drawRoundNumber();
 
-    setReadyTextVisibility(true, 
-        function(){return continueFromRewardScene()},
-        'Click center circle to continue...',
-        centerPoint.x, centerPoint.y
+    setReadyTextVisibility(
+        true, 
+        function(){return continueFromRewardScene();},
+        'Click green circle to continue...',
+        centerPoint.x, canvas.height - centerPoint.y / 2,
+        25
         );
 
 
@@ -712,8 +726,8 @@ function startRound(moneyGroups, round, maxRounds){
     canvas.clear();
     //createGUI();
     setReadyTextVisibility(true, 
-        function(){return loadBubbleScene(moneyGroups, round, maxRounds)},
-        'Click center circle to begin...',
+        function(){return loadBubbleScene(moneyGroups, round, maxRounds);},
+        'Round ' + round + ' / ' + maxRounds + '\nClick green circle to start...',
         centerPoint.x, centerPoint.y
         );
 }
@@ -750,7 +764,7 @@ function drawRoundNumber(round, maxRounds){
     addToCanvas(roundText);
 }
 
-function loadFinalScene(score){
+function loadFinalScene(score, userId){
     netframe.log('loadFinalScene() called with score: ' + score);
     canvas.clear();
     //currentState = State.End;
@@ -783,7 +797,7 @@ function loadFinalScene(score){
 
     urlText.on("mousedown", function (options) {
         netframe.log('Redirecting to survey...');
-        window.location.href = "https://aarhus.eu.qualtrics.com/jfe/form/SV_24UqZr5mtLPYbsh" + "?userID=" + netframe.getClientId();
+        window.location.href = "https://aarhus.eu.qualtrics.com/jfe/form/SV_24UqZr5mtLPYbsh" + "?userID=" + userId;
     });
 /*
     urlText.setSelectionStyles({ underline: true }, 8, 18);
@@ -1238,18 +1252,20 @@ const Iview = {
     loadFinalScene: loadFinalScene,
     addHint: addHint,
     loadWaitingForSocial: loadWaitingForSocial,
-    loadLogin: loadLogin
+    loadLogin: loadLogin,
+    loginFailed: loginFailed
 };
 
-let loginText;
+let loginTitleText;
 function loadLogin(){
     netframe.log('loadLogin() called in view');
     canvas.clear();
 
-    addToCanvas(createLoginText('Enter password:' , false));
-    loginPasswordObj = createLoginText('test' , true);
+    loginTitleText = createLoginText('Enter Password', false, 40);
+    addToCanvas(loginTitleText);
+    loginPasswordObj = createLoginText('' , true);
     addToCanvas(loginPasswordObj);
-    addToCanvas(createLoginText('Login' , false, function(){clickedLogin()}));
+    addToCanvas(createLoginText('LOGIN' , false, 50, 'green', function(){clickedLogin()}));
 
 }
 
@@ -1257,7 +1273,7 @@ let loginPositionY = 0;
 
 let loginPasswordObj;
 
-function createLoginText(content, isEditable, onClickCallback){
+function createLoginText(content, isEditable, fontSize = 50, fontColor = 'Black', onClickCallback){
     let position = {
         x: centerPoint.x,
         y: (centerPoint.y + loginPositionY),
@@ -1266,8 +1282,6 @@ function createLoginText(content, isEditable, onClickCallback){
     }
 
     loginPositionY += 75;
-    let fontSize = 50;
-    let fontColor = 'black';
 
     let loginText = new fabric.IText(content, {
         fontFamily: 'Verdana',
@@ -1279,7 +1293,8 @@ function createLoginText(content, isEditable, onClickCallback){
         fontSize: fontSize,
         lineHeight : 1,
         textAlign: 'center',
-        editable: isEditable,
+        editable: true,
+        evented: !isEditable
         //backgroundColor: "red"
     });
 
@@ -1287,7 +1302,7 @@ function createLoginText(content, isEditable, onClickCallback){
 
     if(isEditable){
 
-        let box = createBox(500, 75, position, 'yellow');
+        let box = createBox(canvas.width, 75, position, 'AliceBlue');
         //canvas.sendToBack(box);
 
         box.on('mousedown', function() {
@@ -1305,6 +1320,8 @@ function createLoginText(content, isEditable, onClickCallback){
         loginText.on("mousedown", function (options) {
             netframe.log('Clicked on login button');
             onClickCallback();
+            
+            
         });
     }
 
@@ -1343,6 +1360,12 @@ function clickedLogin(){
 
     netframe.getClient().send('clientLoggedIn', data);
     //netframe.makeCmd('cmdLogin', [netframe.getClientId(), password]);
+}
+
+function loginFailed(errorMsg){
+    loginTitleText.text = errorMsg;
+    loginTitleText.set('color', 'red');
+
 }
 
 export default Iview;

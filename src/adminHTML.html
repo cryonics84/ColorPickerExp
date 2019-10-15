@@ -1,45 +1,60 @@
 
-<form id="gameSettings">
-    <H2>Game Settings</H2>
-    Number of rounds: <input type="number" name="numberOfRounds" value="1"><br>
+<div class="tab">
+    <button id="btnSettings">Settings</button>
+    <button id="btnConnections">Connections</button>
+  </div>
 
-    <input type="radio" name="gameMode" value="risky" checked="checked"> Risky<br>
-    <input type="radio" name="gameMode" value="distributed"> Distributed<br>
 
-    <br>
+<div id='settingsTab' class="tabcontent">
 
-    <input type="radio" name="networkMode" value="single" checked="checked">Singleplayer<br>
-    <input type="radio" name="networkMode" value="multi">Multiplayer<br>
-
-    <br>
-    <input id="startButton" type="button" value="Start">
-</form>
-
-<div id="activeGame">
-    <h3 id="roundId">Current round: Waiting for game to start</h3>
-    <button id="button-reset">
-        Reset
-    </button>
+        <form id="gameSettings">
+                <H2>Game Settings</H2>
+                Number of rounds: <input type="number" name="numberOfRounds" value="1"><br>
+            
+                <input type="radio" name="gameMode" value="risky" checked="checked"> Risky<br>
+                <input type="radio" name="gameMode" value="distributed"> Distributed<br>
+            
+                <br>
+            
+                <input type="radio" name="networkMode" value="single" checked="checked">Singleplayer<br>
+                <input type="radio" name="networkMode" value="multi">Multiplayer<br>
+            
+                <br>
+                <input id="startButton" type="button" value="Start">
+            </form>
+            
+            <div id="activeGame">
+                <h3 id="roundId">Current round: Waiting for game to start</h3>
+                <button id="button-reset">
+                    Reset
+                </button>
+            </div>
+            
+            <div id="gameOver">
+                <h1>Game Over</h1>
+                <div>
+                    <h2>Download data:</h2>
+                    <button id="button-gameData">
+                        Download GameData
+                    </button>
+                    <button id="button-participantData">
+                        Download Participant Data
+                    </button>
+                </div>
+            </div>
+            
+            <div>
+                <h3>Current players:</h3>
+                <ul id="playerList">
+            
+                </ul>
+            </div>
+            
 </div>
 
-<div id="gameOver">
-    <h1>Game Over</h1>
-    <div>
-        <h2>Download data:</h2>
-        <button id="button-gameData">
-            Download GameData
-        </button>
-        <button id="button-participantData">
-            Download Participant Data
-        </button>
-    </div>
+<div id='connectionsTab'>
+        <button id="btnSaveConnections">Save Connections</button>
+        <button id="btnLoadConnections">Load Connections</button>
+        <div id='crossTableContainer'>test</div>
 </div>
 
-<div>
-    <h3>Current players:</h3>
-    <ul id="playerList">
-
-    </ul>
-</div>
-
-<div id='crossTableContainer'>test</div>
